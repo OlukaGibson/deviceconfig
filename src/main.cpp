@@ -1,55 +1,108 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-String imsi = "";
-
-void checkNetwork();
-String getIMSI();
+String apn = "TM";
+String apn_u = "";
+String apn_p = "";
+String url = "https://api.thingspeak.com/update?api_key=3WN7JU712JH0D99F&field1=11";
 
 void setup() {
   Serial.begin(115200);
   pinMode(A0, OUTPUT);
   digitalWrite(A0, HIGH);
-
   Serial1.begin(115200);
-  Serial.println("Initializing modem...");
-  delay(3000);
-
-  checkNetwork();
-  imsi = getIMSI();
-
-}
-
-void loop() {
-  while (Serial1.available()) {
-    Serial.write(Serial1.read());
-  }
-}
- 
-void checkNetwork() {
+  
+  // Initialize modem
+  Serial1.println("AT");
+  delay(1000);
   Serial1.println("AT+CREG?");
   delay(1000);
   Serial1.println("AT+CGATT?");
   delay(1000);
-}
-
-String getIMSI() {
-  Serial1.println("AT+CIMI");
-  delay(2000);
+  Serial1.println("AT+CSTT=\"" + apn + "\",\"" + apn_u + "\",\"" + apn_p + "\"");
+  delay(1000);
+  Serial1.println("AT+CIICR");
+  delay(3000);
+  Serial1.println("AT+CIFSR");
+  delay(1000);
   
-  String response = "";
-  while (Serial1.available()) {
+  // Start HTTP POST
+  Serial1.println("AT+HTTPINIT");
+  delay(1000);
+  Serial1.println("AT+HTTPPARA=\"CID\",1");
+  delay(1000);
+  Serial1.println("AT+HTTPPARA=\"URL\",\"" + url + "\"");
+  delay(1000);
+  Serial1.println("AT+HTTPACTION=0"); // 1 for POST
+  delay(5000); // Wait for the response
+  
+  // Read the response
+  if (Serial1.available()) {
+    while (Serial1.available()) {
       char c = Serial1.read();
-      if (c == '\n' || c == '\r') continue;
-      response += c;
+      Serial.print(c);
+    }
   }
   
-  response.trim();
-  Serial.print("IMSI: ");
-  Serial.println(response);
-  
-  return response;
+  Serial1.println("AT+HTTPTERM");
 }
+
+void loop() {
+  // Nothing to do here
+}
+
+// #include <Arduino.h>
+// #include <SoftwareSerial.h>
+
+// String imsi = "";
+
+// void checkNetwork();
+// String getIMSI();
+
+// void setup() {
+//   Serial.begin(115200);
+//   pinMode(A0, OUTPUT);
+//   digitalWrite(A0, HIGH);
+
+//   Serial1.begin(115200);
+//   Serial.println("Initializing modem...");
+//   delay(3000);
+
+//   checkNetwork();
+//   imsi = getIMSI();
+
+// }
+
+// void loop() {
+//   while (Serial1.available()) {
+//     Serial.write(Serial1.read());
+//   }
+// }
+ 
+// void checkNetwork() {
+//   Serial1.println("AT+CREG?");
+//   delay(1000);
+//   Serial1.println("AT+CGATT?");
+//   delay(1000);
+// }
+
+// String getIMSI() {
+//   Serial1.println("AT+CIMI");
+//   delay(2000);
+  
+//   String response = "";
+//   while (Serial1.available()) {
+//       char c = Serial1.read();
+//       if (c == '\n' || c == '\r') continue;
+//       response += c;
+//   }
+  
+//   response.trim();
+//   Serial.print("IMSI: ");
+//   Serial.println(response);
+  
+//   return response;
+// }
 
 //  The  SoftwareSerial  library is used to create a software serial port on pins 2 and 3. The  setup()  function initializes the serial port at 9600 baud and prints a message to the serial port. The  loop()  function prints a message to the serial port every second. 
 //  To compile and upload the code to the ESP32, click on the  Upload  button on the Arduino IDE. 
