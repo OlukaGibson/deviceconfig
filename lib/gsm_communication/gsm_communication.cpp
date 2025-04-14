@@ -9,16 +9,7 @@
 #include <SD.h>
 #include <pin_definition.h>
 #include <sd_card.h>
-
-const char apn[] = "TM";
-const char user[] = "";
-const char pass[] = "";
-const char serverurl1[] = "34.132.108.60";
-const char serverurl2[] = "api.thingspeak.com";
-
-TinyGsm modem(Serial1); // Define the modem object
-TinyGsmClient client(modem); // Define the client object
-HttpClient http(client, serverurl1, 80); // Define the http object
+#include <globalVariables.h>
 
 String apiKey = getConfigValue("DEVICE_WRITE_API_KEY"); // Get the API key from EEPROM
 String channelId = getConfigValue("DEVICE_CHANEL_ID"); // Get the channel ID from EEPROM
