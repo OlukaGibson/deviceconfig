@@ -124,6 +124,11 @@ void deviceSelfConfig(String ccid) {
   postData(url);
 }
 
+void getConfigData(String deviceID) {
+  String url = "/device/"+deviceID+"/getconfig";
+  postData(url);
+}
+
 void postParameters(String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8, String field9, String field10, String field11, String field12) {
   String url = "/update?api_key=" + apiKey + "&field1=" + field1 + "&field2=" + field2 + "&field3=" + field3 + "&field4=" + field4 + "&field5=" + field5 + "&field6=" + field6 + "&field7=" + field7 + "&field8=" + field8 + "&field9=" + field9 + "&field10=" + field10 + "&field11=" + field11 + "&field12=" + field12;
   postData(url);

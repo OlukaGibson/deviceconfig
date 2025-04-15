@@ -27,7 +27,7 @@ void setup() {
   Serial.println("IMSI: " + imsi);
   Serial.println("Signal Quality: " + signalQuality);
 
-  connectGPRS();
+  // connectGPRS();
   
   // Now try downloading the firmware
   // if (downloadFirmware("hi")) {
@@ -36,7 +36,8 @@ void setup() {
   //   Serial.println("Firmware download failed");
   // }
   
-  getConfigDetails(ccid);
+  // deviceSelfConfig(ccid);
+  // getConfigData("1");
 }
 
 void loop() {
