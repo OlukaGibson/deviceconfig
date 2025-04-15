@@ -12,8 +12,8 @@ void setup() {
   Serial1.begin(115200);
 
   // Test the SD card first
-  testSDCard();
-  delay(1000);
+  // testSDCard();
+  // delay(1000);
 
   checkNetwork();
   delay(3000);

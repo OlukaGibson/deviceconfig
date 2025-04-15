@@ -40,6 +40,6 @@ const char pass[] = "";
 const char serverurl1[] = "34.132.108.60";
 const char serverurl2[] = "api.thingspeak.com";
 
-TinyGsm modem(Serial1); // Define the modem object
-TinyGsmClient client(modem); // Define the client object
-HttpClient http(client, serverurl1, 80); // Define the http object
+TinyGsm modem(Serial1);
+TinyGsmClient client(modem);
+HttpClient http(client, serverurl1, 80);

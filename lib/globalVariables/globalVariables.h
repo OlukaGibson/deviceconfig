@@ -1,9 +1,10 @@
 #ifndef GLOBALVARIABLES_H
 #define GLOBALVARIABLES_H
 
+// Define the modem type before including the TinyGSM library
 #define TINY_GSM_MODEM_SIM800
 
-#include <TinyGsmClient.h>
+#include <TinyGsm.h>
 #include <ArduinoHttpClient.h>
 #include <Arduino.h>
 #include <pin_definition.h>

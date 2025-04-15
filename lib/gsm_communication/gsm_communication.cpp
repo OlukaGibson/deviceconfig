@@ -1,3 +1,5 @@
+#define TINY_GSM_MODEM_SIM800
+
 #include "gsm_communication.h"
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
@@ -11,8 +13,8 @@
 #include <sd_card.h>
 #include <globalVariables.h>
 
-String apiKey = getConfigValue("DEVICE_WRITE_API_KEY"); // Get the API key from EEPROM
-String channelId = getConfigValue("DEVICE_CHANEL_ID"); // Get the channel ID from EEPROM
+// String apiKey = getConfigValue("DEVICE_WRITE_API_KEY"); // Get the API key from EEPROM
+// String channelId = getConfigValue("DEVICE_CHANEL_ID"); // Get the channel ID from EEPROM
 
 void gsmTurnOn() {
     pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
