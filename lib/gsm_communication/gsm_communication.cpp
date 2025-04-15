@@ -119,7 +119,7 @@ void postData(String url) {
     Serial.println("Disconnected from GPRS.");
 }
 
-void getConfigDetails(String ccid) {
+void deviceSelfConfig(String ccid) {
   String url = "/device/"+ccid+"/selfconfig"; //"/";
   postData(url);
 }
