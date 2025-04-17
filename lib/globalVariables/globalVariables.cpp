@@ -11,7 +11,7 @@
 String created_at;
 int8_t delta_t;
 String deviceName = getConfigValue("DEVICE_NAME");
-String apiKey = getConfigValue("DEVICE_WRITE_API_KEY");
+String apiKey = "L1FU10HZOQ745OCM"; //getConfigValue("DEVICE_WRITE_API_KEY");
 String channelId = getConfigValue("DEVICE_CHANEL_ID");
 extern float pms1_2_5;
 extern float pms1_10;
@@ -43,3 +43,14 @@ const char serverurl2[] = "api.thingspeak.com";
 TinyGsm modem(Serial1);
 TinyGsmClient client(modem);
 HttpClient http(client, serverurl1, 80);
+
+// FOTA related variables
+const char FILE_NAME[] = "/firmware.bin";
+const unsigned long EXPECTED_SIZE = 128400;
+const size_t chunkSize = 1024; // 1KB chunks
+byte buff[chunkSize];
+unsigned long downloaded = 0;
+unsigned long lastProgressTime = millis();
+unsigned long downloadStartTime = millis();
+unsigned long lastDataTime = millis();
+boolean receivingData = false;

@@ -13,18 +13,11 @@
 #include <sd_card.h>
 #include <globalVariables.h>
 
-// String apiKey = getConfigValue("DEVICE_WRITE_API_KEY"); // Get the API key from EEPROM
-// String channelId = getConfigValue("DEVICE_CHANEL_ID"); // Get the channel ID from EEPROM
 
-void gsmTurnOn() {
+void powerGSM(bool state) {
     pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
-    digitalWrite(GSM_POWER_SWITCH_PIN, HIGH);
-    delay(1000);
-}
-
-void gsmTurnOff() {
-    pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
-    digitalWrite(GSM_POWER_SWITCH_PIN, LOW);
+    digitalWrite(GSM_POWER_SWITCH_PIN, state);
+    Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
     delay(1000);
 }
 
@@ -129,8 +122,13 @@ void getConfigData(String deviceID) {
   postData(url);
 }
 
-void postParameters(String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8, String field9, String field10, String field11, String field12) {
-  String url = "/update?api_key=" + apiKey + "&field1=" + field1 + "&field2=" + field2 + "&field3=" + field3 + "&field4=" + field4 + "&field5=" + field5 + "&field6=" + field6 + "&field7=" + field7 + "&field8=" + field8 + "&field9=" + field9 + "&field10=" + field10 + "&field11=" + field11 + "&field12=" + field12;
+void postMetaData(String metadata1, String metadata2, String metadata3, String metadata4) {
+  String url = "/metadataupdate?api_key=" + apiKey + "&metadata1=" + metadata1 + "&metadata2=" + metadata2 + "&metadata3=" + metadata3 + "&metadata4=" + metadata4;
+  postData(url);
+}
+
+void postDeviceData(String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8) {
+  String url = "/update?api_key=" + apiKey + "&field1=" + field1 + "&field2=" + field2 + "&field3=" + field3 + "&field4=" + field4 + "&field5=" + field5 + "&field6=" + field6 + "&field7=" + field7 + "&field8=" + field8;
   postData(url);
 }
 
@@ -153,6 +151,140 @@ void connectGPRS() {
       return;
   }
   Serial.println("GPRS connected!");
+
+  client.setTimeout(30000); // 30 seconds timeout
+}
+
+void firmwareUpdate(String fileName, String resource) {
+  firmwareRename(fileName); // Rename old firmware file if it exists
+  
+  Serial.println("Sending GET request...");
+  http.beginRequest();
+  http.get(resource);
+  http.sendHeader("Accept", "application/octet-stream");
+  http.endRequest();
+
+  // Check response status
+  int statusCode = http.responseStatusCode();
+  Serial.print("Status code: ");
+  Serial.println(statusCode);
+
+  if (statusCode != 200) {
+    Serial.print("Failed to get file. Status code: ");
+    Serial.println(statusCode);
+    return;
+  }
+
+  // Get content length
+  int length = http.contentLength();
+  Serial.print("Content-Length: ");
+  Serial.println(length);
+  
+  // Use expected size if content length is invalid
+  if (length <= 0) {
+    Serial.println("Invalid content length. Using expected size instead.");
+    length = EXPECTED_SIZE;
+  }
+
+  // Prepare file for writing
+  File file = SD.open(FILE_NAME, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to open file on SD card.");
+    return;
+  }
+
+  while (true) {
+    // Check for available data
+    if (http.available()) {
+      lastDataTime = millis();
+      receivingData = true;
+      
+      size_t available = http.available();
+      size_t toRead = min(available, chunkSize);
+      int bytesRead = http.read(buff, toRead);
+      
+      // Process received data
+      if (bytesRead > 0) {
+        size_t bytesWritten = file.write(buff, bytesRead);
+        if (bytesWritten != (size_t)bytesRead) {
+          Serial.println("Write error!");
+          break;
+        }
+        downloaded += bytesRead;
+        
+        // Print progress indicators
+        if (downloaded % 4096 == 0) { // Every 4KB
+          Serial.print(".");
+        }
+        
+        // Print progress percentage
+        if (millis() - lastProgressTime > 5000) {  // Every 5 seconds
+          Serial.println();
+          Serial.print("Downloaded: ");
+          Serial.print(downloaded / 1024);
+          Serial.print("KB (");
+          if (length > 0) {
+            Serial.print((downloaded * 100) / length);
+            Serial.print("%");
+          }
+          Serial.println(")");
+          lastProgressTime = millis();
+        }
+      }
+    } 
+    else {
+      // Check if we're done or disconnected
+      if (!http.connected()) {
+        if (receivingData) {
+          Serial.println("\nServer disconnected. Download may be complete.");
+          break;
+        }
+      }
+      
+      // Check for data timeout (10 seconds without data)
+      if (receivingData && (millis() - lastDataTime > 20000)) {
+        Serial.println("\nData reception timeout.");
+        break;
+      }
+      
+      // Small delay when no data is available
+      delay(100);
+    }
+    
+    // Safety timeout - abort if downloading takes too long (5 minutes)
+    if (millis() - downloadStartTime > 300000) {
+      Serial.println("\nDownload timeout - maximum time exceeded!");
+      break;
+    }
+  }
+  
+  file.close();
+  
+  // Verify downloaded file
+  File readFile = SD.open(FILE_NAME);
+  if (readFile) {
+    unsigned long fileSize = readFile.size();
+    readFile.close();
+    
+    Serial.print("\nDownload completed. Total bytes: ");
+    Serial.println(downloaded);
+    Serial.print("Saved file size: ");
+    Serial.println(fileSize);
+    
+    // Verify file size
+    if (fileSize < EXPECTED_SIZE) { // If smaller than 10KB
+      Serial.println("WARNING: File appears incomplete!");
+    } else {
+      Serial.println("File download appears successful.");
+    }
+  } else {
+    Serial.println("Error opening file for verification.");
+  }
+  
+  // Disconnect from network
+  modem.gprsDisconnect();
+  Serial.println("GPRS disconnected");
+
 }
 
 bool downloadFirmware(const String& version) {

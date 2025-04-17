@@ -4,6 +4,11 @@
 #include <Arduino.h>
 #include <SD.h>
 
+void powerSD(bool state);
+int16_t sdHealthCheck();
+void firmwareRename(String fileName);
+
+
 bool initSDCard();
 void testSDCard();
 

@@ -54,4 +54,15 @@ extern TinyGsm modem;
 extern TinyGsmClient client;
 extern HttpClient http;
 
+// FOTA related variables
+extern const char FILE_NAME[];
+extern const unsigned long EXPECTED_SIZE;
+extern const size_t chunkSize;
+extern byte buff[];
+extern unsigned long downloaded;
+extern unsigned long lastProgressTime;
+extern unsigned long downloadStartTime;
+extern unsigned long lastDataTime;
+extern boolean receivingData;
+
 #endif

@@ -4,10 +4,13 @@
 #include <pin_definition.h>
 #include <sd_card.h>
 
+const char resource[] = "/firmware/42.74/download/firwmwarebin";
+
 void setup() {
   Serial.begin(115200);
-  pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
-  digitalWrite(GSM_POWER_SWITCH_PIN, HIGH);
+  powerGSM(1);
+  powerSD(1);
+  delay(3000);
 
   Serial1.begin(115200);
 
@@ -27,17 +30,18 @@ void setup() {
   Serial.println("IMSI: " + imsi);
   Serial.println("Signal Quality: " + signalQuality);
 
-  // connectGPRS();
-  
-  // Now try downloading the firmware
-  // if (downloadFirmware("hi")) {
-  //   Serial.println("Firmware downloaded successfully");
-  // } else {
-  //   Serial.println("Firmware download failed");
-  // }
-  
+  connectGPRS();
+  // Initialize SD card first, to ensure it's ready for firmware storage
+  Serial.println("Initializing SD card...");
+  if (sdHealthCheck() != 0) {
+    Serial.println("SD card initialization failed! Cannot proceed with firmware update.");
+    return;
+  }
   // deviceSelfConfig(ccid);
   // getConfigData("1");
+  // postMetaData("1", "2", "3", "4");
+  // postDeviceData("1", "2", "3", "4", "5", "6", "7", "8");
+  firmwareUpdate("/firmware.bin", resource);
 }
 
 void loop() {

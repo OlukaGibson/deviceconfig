@@ -1,234 +1,244 @@
-// #include <Arduino.h>
-// #include <SoftwareSerial.h>
-
-// String getIMSI();
-// String getCCID();
-// String getIMEI();
-
-// void checkNetwork();
-
-// void setup() {
-//   Serial.begin(115200);
-//   pinMode(A0, OUTPUT);
-//   digitalWrite(A0, HIGH);
-
-//   Serial1.begin(115200);
-//   Serial.println("Initializing modem...");
-//   delay(3000);
-
-//   checkNetwork();
-
-//   String ccid = getCCID();
-//   String imei = getIMEI();
-//   String imsi = getIMSI();
-
-//   Serial.println("CCID: " + ccid);
-//   Serial.println("IMEI: " + imei);
-//   Serial.println("IMSI: " + imsi);
-// }
-
-// void loop() {
-//   while (Serial1.available()) {
-//     Serial.write(Serial1.read());
-//   }
-// }
-
-// void checkNetwork() {
-//   Serial1.println("AT+CREG?");
-//   delay(1000);
-//   Serial1.println("AT+CGATT?");
-//   delay(1000);
-// }
-
-// String getIMSI() {
-//   Serial1.println("AT+CIMI");
-//   delay(2000);
-
-//   String response = "";
-//   while (Serial1.available()) {
-//     char c = Serial1.read();
-//     if (isDigit(c)) { // Only keep numeric characters
-//       response += c;
-//     }
-//   }
-
-//   response.trim();
-//   return response;
-// }
-
-// String getCCID() {
-//   Serial1.println("AT+CCID");
-//   delay(2000);
-
-//   String response = "";
-//   while (Serial1.available()) {
-//     char c = Serial1.read();
-//     if (isDigit(c)) { // Only keep numeric characters
-//       response += c;
-//     }
-//   }
-
-//   response.trim();
-//   return response;
-// }
-
-// String getIMEI() {
-//   Serial1.println("AT+GSN");
-//   delay(2000);
-
-//   String response = "";
-//   while (Serial1.available()) {
-//     char c = Serial1.read();
-//     if (isDigit(c)) { // Only keep numeric characters
-//       response += c;
-//     }
-//   }
-
-//   response.trim();
-//   return response;
-// }
-
-
-// // 12:46:27.524 -> CCID: 8944501905220513
-// // 12:46:27.524 -> IMEI: 862749051555539
-// // 12:46:27.524 -> IMSI: 234502106051302
-
-
-// //  The  SoftwareSerial  library is used to create a software serial port on pins 2 and 3. The  setup()  function initializes the serial port at 9600 baud and prints a message to the serial port. The  loop()  function prints a message to the serial port every second. 
-// //  To compile and upload the code to the ESP32, click on the  Upload  button on the Arduino IDE. 
-// //  After uploading the code, open the serial monitor by clicking on the  Tools  menu, then  Serial Monitor . Set the baud rate to 9600 and you should see the message “Hello, world!” printed every second. 
-// //  Conclusion 
-// //  In this tutorial, you learned how to use the SoftwareSerial library to create a software serial port on the ESP32. You also learned how to use the SoftwareSerial library to communicate with other devices using the software serial port. 
-// //  If you have any questions or feedback, feel free to leave a comment. 
-// //  Thanks for reading! 
-// //  You may also like: 
- 
-// //  ESP32 Deep Sleep with Periodic Wake Up
-// //  ESP32 Web Server with SPIFFS (SPI Flash File System)
-// //  ESP32 Web Server with Arduino IDE
-// //  ESP32 Static/Fixed IP Address
-// //  ESP32 Data Logging Temperature to MicroSD Card
-
-
-
 // #define TINY_GSM_MODEM_SIM800
 
 // #include <TinyGsmClient.h>
 // #include <ArduinoHttpClient.h>
+// #include <SD.h>
+// #include <SPI.h>
 
-// #define SerialAT Serial1
+// // GSM module settings
+// #define GSM_POWER_SWITCH_PIN    A0
+// #define RX1_PIN                 19
+// #define TX1_PIN                 18
+// #define GSM_RESET_PIN           10
 
-// void sendToThingSpeak(String field1);
+// // SD card settings
+// #define SD_POWER_SWITCH_PIN     30
+// #define SD_CS_PIN               28
+// #define SD_MOSI_PIN             51
+// #define SD_MISO_PIN             50
+// #define SD_SCK_PIN              52
 
-// // Define your APN credentials
-// const char apn[]  = "TM";     // Replace with your APN
-// const char user[] = "";             // APN username (if required)
-// const char pass[] = "";             // APN password (if required)
+// #define FILE_NAME "/firmware.bin"
 
-// // ThingSpeak API
-// const char server[] = "34.132.108.60";//"api.thingspeak.com";
-// // const String apiKey = "3WN7JU712JH0D99F";  // Your ThingSpeak API Key
+// // APN config
+// const char apn[]  = "TM"; // Replace with your SIM card APN
+// const char user[] = "";
+// const char pass[] = "";
 
-// String imsi = "";
+// // URL to download
+// const char server[] = "34.132.108.60";
+// const int port = 80;
+// const char resource[] = "/firmware/42.74/download/firwmwarebin";
 
-// void checkNetwork();
-// String getIMSI();
+// // Firmware expected size
+// const unsigned long EXPECTED_SIZE = 131481; // ~128.4KB
 
-// TinyGsm modem(SerialAT);
+// // Globals
+// TinyGsm modem(Serial1);
 // TinyGsmClient client(modem);
-// HttpClient http(client, server, 80);
+// HttpClient http(client, server, port);
+
+// void powerGSM(bool state) {
+//   digitalWrite(GSM_POWER_SWITCH_PIN, state);
+// }
+
+// void resetGSM() {
+//   digitalWrite(GSM_RESET_PIN, LOW);
+//   delay(100);
+//   digitalWrite(GSM_RESET_PIN, HIGH);
+//   delay(1000);
+// }
+
+// void powerSD(bool state) {
+//   digitalWrite(SD_POWER_SWITCH_PIN, state);
+// }
 
 // void setup() {
-//     Serial.begin(115200);
-//     pinMode(A0, OUTPUT);
-//     digitalWrite(A0, HIGH);
-//     SerialAT.begin(115200);
+//   Serial.begin(115200);
+//   delay(10);
 
-//     checkNetwork();
-//     imsi = getIMSI();
-//     Serial.print("IMSI: ");
-//     Serial.println(imsi);
+//   // Power and reset control pins
+//   pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
+//   pinMode(GSM_RESET_PIN, OUTPUT);
+//   pinMode(SD_POWER_SWITCH_PIN, OUTPUT);
 
-//     Serial.println("Initializing modem...");
-//     if (!modem.restart()) {
-//         Serial.println("Failed to restart modem!");
-//         return;
+//   powerGSM(true);
+//   resetGSM();
+
+//   // Begin Serial1 for GSM
+//   Serial1.begin(9600);
+
+//   Serial.println("Initializing modem...");
+//   modem.restart();
+
+//   Serial.print("Connecting to GPRS...");
+//   if (!modem.gprsConnect(apn, user, pass)) {
+//     Serial.println(" fail");
+//     while (true);
+//   }
+//   Serial.println(" success");
+  
+//   // Set client timeout
+//   client.setTimeout(30000); // 30 seconds timeout
+
+//   // Power on SD card
+//   powerSD(true);
+//   delay(100);
+
+//   SPI.begin();
+//   if (!SD.begin(SD_CS_PIN)) {
+//     Serial.println("SD card init failed!");
+//     while (true);
+//   }
+//   Serial.println("SD card initialized.");
+
+//   // If old file exists, delete it
+//   if (SD.exists(FILE_NAME)) {
+//     SD.remove(FILE_NAME);
+//     Serial.println("Removed old firmware file.");
+//   }
+
+//   // Start HTTP GET request
+//   Serial.println("Sending GET request...");
+//   http.beginRequest();
+//   http.get(resource);
+//   http.sendHeader("Accept", "application/octet-stream");
+//   http.endRequest();
+
+//   // Check response status
+//   int statusCode = http.responseStatusCode();
+//   Serial.print("Status code: ");
+//   Serial.println(statusCode);
+  
+//   if (statusCode != 200) {
+//     Serial.print("Failed to get file. Status code: ");
+//     Serial.println(statusCode);
+//     return;
+//   }
+  
+//   // Get content length
+//   int length = http.contentLength();
+//   Serial.print("Content-Length: ");
+//   Serial.println(length);
+  
+//   // Use expected size if content length is invalid
+//   if (length <= 0) {
+//     Serial.println("Invalid content length. Using expected size instead.");
+//     length = EXPECTED_SIZE;
+//   }
+  
+//   // Prepare file for writing
+//   File file = SD.open(FILE_NAME, FILE_WRITE);
+//   if (!file) {
+//     Serial.println("Failed to open file on SD card.");
+//     return;
+//   }
+
+//   // Download variables
+//   const size_t chunkSize = 1024; // 1KB chunks
+//   byte buff[chunkSize];
+//   unsigned long downloaded = 0;
+//   unsigned long lastProgressTime = millis();
+//   unsigned long downloadStartTime = millis();
+//   unsigned long lastDataTime = millis();
+//   boolean receivingData = false;
+  
+//   Serial.println("Starting download...");
+  
+//   // Main download loop
+//   while (true) {
+//     // Check for available data
+//     if (http.available()) {
+//       lastDataTime = millis();
+//       receivingData = true;
+      
+//       size_t available = http.available();
+//       size_t toRead = min(available, chunkSize);
+//       int bytesRead = http.read(buff, toRead);
+      
+//       // Process received data
+//       if (bytesRead > 0) {
+//         size_t bytesWritten = file.write(buff, bytesRead);
+//         if (bytesWritten != (size_t)bytesRead) {
+//           Serial.println("Write error!");
+//           break;
+//         }
+//         downloaded += bytesRead;
+        
+//         // Print progress indicators
+//         if (downloaded % 4096 == 0) { // Every 4KB
+//           Serial.print(".");
+//         }
+        
+//         // Print progress percentage
+//         if (millis() - lastProgressTime > 5000) {  // Every 5 seconds
+//           Serial.println();
+//           Serial.print("Downloaded: ");
+//           Serial.print(downloaded / 1024);
+//           Serial.print("KB (");
+//           if (length > 0) {
+//             Serial.print((downloaded * 100) / length);
+//             Serial.print("%");
+//           }
+//           Serial.println(")");
+//           lastProgressTime = millis();
+//         }
+//       }
+//     } 
+//     else {
+//       // Check if we're done or disconnected
+//       if (!http.connected()) {
+//         if (receivingData) {
+//           Serial.println("\nServer disconnected. Download may be complete.");
+//           break;
+//         }
+//       }
+      
+//       // Check for data timeout (10 seconds without data)
+//       if (receivingData && (millis() - lastDataTime > 10000)) {
+//         Serial.println("\nData reception timeout.");
+//         break;
+//       }
+      
+//       // Small delay when no data is available
+//       delay(100);
 //     }
-
-//     Serial.println("Waiting for network...");
-//     if (!modem.waitForNetwork()) {
-//         Serial.println("Network connection failed!");
-//         return;
+    
+//     // Safety timeout - abort if downloading takes too long (5 minutes)
+//     if (millis() - downloadStartTime > 300000) {
+//       Serial.println("\nDownload timeout - maximum time exceeded!");
+//       break;
 //     }
-//     Serial.println("Connected to network!");
+//   }
 
-//     Serial.println("Connecting to GPRS...");
-//     if (!modem.gprsConnect(apn, user, pass)) {
-//         Serial.println("Failed to connect to GPRS!");
-//         return;
+//   file.close();
+  
+//   // Verify downloaded file
+//   File readFile = SD.open(FILE_NAME);
+//   if (readFile) {
+//     unsigned long fileSize = readFile.size();
+//     readFile.close();
+    
+//     Serial.print("\nDownload completed. Total bytes: ");
+//     Serial.println(downloaded);
+//     Serial.print("Saved file size: ");
+//     Serial.println(fileSize);
+    
+//     // Verify file size
+//     if (fileSize < 10000) { // If smaller than 10KB
+//       Serial.println("WARNING: File appears incomplete!");
+//     } else {
+//       Serial.println("File download appears successful.");
 //     }
-//     Serial.println("GPRS connected!");
-
-//     sendToThingSpeak(imsi);  // Example: Send field1=25
+//   } else {
+//     Serial.println("Error opening file for verification.");
+//   }
+  
+//   // Disconnect from network
+//   modem.gprsDisconnect();
+//   Serial.println("GPRS disconnected");
 // }
 
 // void loop() {
-//     // No loop logic required
-// }
-
-
-// void checkNetwork() {
-//     Serial1.println("AT+CREG?");
-//     delay(1000);
-//     Serial1.println("AT+CGATT?");
-//     delay(1000);
-//   }
-
-//   String getIMSI() {
-//     Serial1.println("AT+CIMI");
-//     delay(2000);
-    
-//     String response = "";
-//     while (Serial1.available()) {
-//         char c = Serial1.read();
-//         if (c == '\n' || c == '\r') continue;
-//         response += c;
-//     }
-    
-//     response.trim();
-    
-//     String imsi = "";
-//     for (char c : response) {
-//       if (isDigit(c)) {
-//         imsi += c;
-//       }
-//     }
-    
-//     return imsi;
-//   }
-
-// void sendToThingSpeak(String imsi) {
-//     String url = "/device/234502106051372/selfconfig";//"/"+imsi+"/selfconfig";//"/update?api_key=" + apiKey + "&field1=" + String(field1);
-    
-//     Serial.print("Requesting URL: ");
-//     Serial.println(url);
-    
-//     http.get(url);
-
-//     int statusCode = http.responseStatusCode();
-//     String response = http.responseBody();
-
-//     Serial.print("Response Code: ");
-//     Serial.println(statusCode);
-//     Serial.print("Response Body: ");
-//     Serial.println(response);
-
-//     if (statusCode == 200) {
-//         Serial.println("Data sent successfully!");
-//     } else {
-//         Serial.println("Failed to send data.");
-//     }
-
-//     modem.gprsDisconnect();
-//     Serial.println("Disconnected from GPRS.");
+//   // Nothing here
 // }

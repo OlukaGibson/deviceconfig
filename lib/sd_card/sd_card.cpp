@@ -1,5 +1,62 @@
 #include "sd_card.h"
 #include <pin_definition.h>
+#include <SD.h>
+#include <SPI.h>
+#include <globalVariables.h>
+#include <gsm_communication.h>
+#include <Arduino.h>
+
+void powerSD(bool state) {
+  pinMode(SD_POWER_SWITCH_PIN, OUTPUT);
+  digitalWrite(SD_POWER_SWITCH_PIN, state);
+  Serial.println("SD power state: " + String(state ? "ON" : "OFF"));
+  delay(1000);
+}
+
+int16_t sdHealthCheck(){
+  SPI.begin();
+  if (!SD.begin(SD_CS_PIN)){
+    Serial.println("SD card init failed!");
+    return 2;
+  }else{
+    Serial.println("SD card initialized.");
+    return 0;
+  }
+}
+
+void firmwareRename(String fileName) {
+  // If old file exists, rename it to backup
+  if (SD.exists(fileName)) {
+    Serial.println("Old firmware file exists. Renaming to backup...");
+    File oldFile = SD.open(fileName);
+    if (oldFile) {
+        File newFile = SD.open("/backup_firmware.bin", FILE_WRITE);
+        if (newFile) {
+            while (oldFile.available()) {
+                newFile.write(oldFile.read());
+            }
+            newFile.close();
+        }
+        oldFile.close();
+        SD.remove(fileName);
+    } else {
+        Serial.println("Failed to open old firmware file for renaming.");
+    }
+  } else {
+    Serial.println("No old firmware file found.");
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 bool initSDCard() {
   Serial.println("Initializing SD card...");
