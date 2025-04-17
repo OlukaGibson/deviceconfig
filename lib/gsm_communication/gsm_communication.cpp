@@ -176,7 +176,7 @@ void firmwareUpdate(String fileName, String resource) {
   }
 
   // Get content length
-  int length = http.contentLength();
+  uint32_t length = http.contentLength();
   Serial.print("Content-Length: ");
   Serial.println(length);
   
