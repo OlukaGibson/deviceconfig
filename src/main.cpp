@@ -4,7 +4,7 @@
 #include <pin_definition.h>
 #include <sd_card.h>
 
-const char resource[] = "/firmware/42.74/download/firwmwarebin";
+const char resource[] = "/firmware/42.74/download/firmwarebin";
 
 void setup() {
   Serial.begin(115200);

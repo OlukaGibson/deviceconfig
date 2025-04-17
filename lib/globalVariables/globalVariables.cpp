@@ -45,7 +45,7 @@ TinyGsmClient client(modem);
 HttpClient http(client, serverurl1, 80);
 
 // FOTA related variables
-const char FILE_NAME[] = "/firmware.bin";
+const char FILE_NAME[] = "/file.bin";
 const unsigned long EXPECTED_SIZE = 128400;
 const size_t chunkSize = 1024; // 1KB chunks
 byte buff[chunkSize];

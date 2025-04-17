@@ -155,9 +155,8 @@ void connectGPRS() {
   client.setTimeout(30000); // 30 seconds timeout
 }
 
-void firmwareUpdate(String fileName, String resource) {
-  firmwareRename(fileName); // Rename old firmware file if it exists
-  
+int8_t firmwareDownload(String resource) {
+  Serial.println("Starting firmware download...");
   Serial.println("Sending GET request...");
   http.beginRequest();
   http.get(resource);
@@ -169,7 +168,7 @@ void firmwareUpdate(String fileName, String resource) {
   Serial.print("Status code: ");
   Serial.println(statusCode);
 
-  if (statusCode != 200) {
+  if (statusCode != 200 || statusCode != 206) {
     Serial.print("Failed to get file. Status code: ");
     Serial.println(statusCode);
     return;
@@ -270,252 +269,155 @@ void firmwareUpdate(String fileName, String resource) {
     Serial.println(downloaded);
     Serial.print("Saved file size: ");
     Serial.println(fileSize);
-    
+
+    // Disconnect from network
+    modem.gprsDisconnect();
+    Serial.println("GPRS disconnected");
+
     // Verify file size
-    if (fileSize < EXPECTED_SIZE) { // If smaller than 10KB
+    if (fileSize == EXPECTED_SIZE) {
       Serial.println("WARNING: File appears incomplete!");
+      return 1;
     } else {
       Serial.println("File download appears successful.");
+      return 0;
     }
   } else {
     Serial.println("Error opening file for verification.");
+    return -1;
   }
-  
-  // Disconnect from network
-  modem.gprsDisconnect();
-  Serial.println("GPRS disconnected");
-
 }
 
-bool downloadFirmware(const String& version) {
-  Serial.println("Starting firmware download...");
-  
-  // Make sure we're connected to GPRS
-  if (!modem.isGprsConnected()) {
-    Serial.println("GPRS not connected. Reconnecting...");
-    if (!modem.gprsConnect(apn, user, pass)) {
-      Serial.println("GPRS connection failed");
-      return false;
-    }
+int8_t resumeFirmwareDownload(String resource) {
+  // Check already downloaded size
+  File file = SD.open(FILE_NAME, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to open file for resuming.");
+    return -1;
   }
-  
-  // Prepare the endpoint
-  String endpoint = "/firmware/" + version + "/download/firwmwarebin";
-  Serial.print("Requesting firmware from URL: ");
-  Serial.println(serverurl1 + endpoint);
-  
-  // Initialize SD card with better error handling
-  Serial.println("Enabling SD card power...");
-  pinMode(SD_POWER_SWITCH_PIN, OUTPUT);
-  digitalWrite(SD_POWER_SWITCH_PIN, HIGH);
-  delay(1000); // Give more time to power up
-  
-  Serial.println("Setting up SD card pins...");
-  pinMode(SD_CS_PIN, OUTPUT);
-  digitalWrite(SD_CS_PIN, HIGH); // Default state for CS pin
-  
-  // Initialize SPI pins
-  pinMode(SD_MOSI_PIN, OUTPUT);
-  pinMode(SD_MISO_PIN, INPUT);
-  pinMode(SD_SCK_PIN, OUTPUT);
-  
-  Serial.println("Initializing SD card library...");
-  if (!SD.begin(SD_CS_PIN)) {
-    Serial.println("SD Card initialization failed! Possible causes:");
-    Serial.println("- Card not inserted properly");
-    Serial.println("- Card not compatible or damaged");
-    Serial.println("- Wiring issue (check connections)");
-    Serial.println("- Power issue (check voltage)");
-    return false;
-  }
-  
-  Serial.println("SD Card initialized successfully!");
-  
-  // Create or open file to save firmware
-  String fileName = "/firmware_" + version + ".bin";
-  if (SD.exists(fileName)) {
-    Serial.println("Removing existing firmware file...");
-    SD.remove(fileName);
-  }
-  
-  Serial.println("Creating firmware file: " + fileName);
-  File firmwareFile = SD.open(fileName, FILE_WRITE);
-  if (!firmwareFile) {
-    Serial.println("Failed to create firmware file on SD card. Checking card status:");
-    
-    // Try to diagnose file creation issue
-    Serial.println("- Checking root directory access...");
-    File root = SD.open("/");
-    if (!root) {
-      Serial.println("- Unable to open root directory");
-    } else {
-      Serial.println("- Root directory contents:");
-      int fileCount = 0;
-      while (true) {
-        File entry = root.openNextFile();
-        if (!entry) break;
-        fileCount++;
-        Serial.print("  * ");
-        Serial.print(entry.name());
-        Serial.print(" - ");
-        Serial.print(entry.size());
-        Serial.println(" bytes");
-        entry.close();
-      }
-      if (fileCount == 0) {
-        Serial.println("  (No files found)");
-      }
-      root.close();
-    }
-    
-    // Try creating a simple test file to diagnose write issues
-    Serial.println("- Testing if we can create any file...");
-    File testFile = SD.open("/test.txt", FILE_WRITE);
-    if (testFile) {
-      testFile.println("Test");
-      testFile.close();
-      Serial.println("- Test file created successfully, but firmware file creation failed");
-    } else {
-      Serial.println("- Cannot create any files on the SD card");
-    }
-    
-    return false;
-  }
-  
-  // Make the HTTP request
-  Serial.println("Connecting to server...");
-  http.connectionKeepAlive();
-  int err = http.get(endpoint);
-  
-  if (err != 0) {
-    Serial.print("HTTP request failed with error: ");
-    Serial.println(err);
-    firmwareFile.close();
-    return false;
-  }
-  
+
+  uint32_t alreadyDownloaded = file.size();
+  Serial.print("Resuming from byte: ");
+  Serial.println(alreadyDownloaded);
+
+  // Setup HTTP with Range header
+  http.beginRequest();
+  http.sendHeader("Range", "bytes=" + String(alreadyDownloaded) + "-");
+  http.get(resource);
+  http.sendHeader("Accept", "application/octet-stream");
+  http.endRequest();
+
   int statusCode = http.responseStatusCode();
-  Serial.print("HTTP Response code: ");
+  Serial.print("Status code: ");
   Serial.println(statusCode);
-  
-  if (statusCode != 200) {
-    Serial.println("Failed to download firmware");
-    firmwareFile.close();
-    return false;
+
+  if (statusCode != 206 && statusCode != 200) {
+    Serial.println("Server did not support partial content or failed.");
+    file.close();
+    return 1; // retry later
   }
-  
-  // Get the content length if available
-  long contentLength = http.contentLength();
-  long bytesWritten = 0;
-  
-  if (contentLength > 0) {
-    Serial.print("Content Length: ");
-    Serial.println(contentLength);
+
+  uint32_t contentLength = http.contentLength();
+  if (contentLength <= 0) {
+    Serial.println("Invalid or missing content length.");
+    file.close();
+    return 1;
   }
-  
-  // Download and save the file
-  Serial.println("Downloading firmware...");
-  long timeoutStart = millis();
-  const long timeout = 60000; // 60 seconds timeout (increased from 30s)
-  const int bufferSize = 128;
-  uint8_t buffer[bufferSize];
-  int progressPercent = 0;
-  int lastPercentReport = -1;
-  
-  while (http.connected() && (millis() - timeoutStart < timeout)) {
-    // Get available data
-    int bytesAvailable = http.available();
-    
-    if (bytesAvailable > 0) {
-      timeoutStart = millis(); // Reset timeout
-      
-      // Read up to buffer size
-      int bytesToRead = min(bytesAvailable, bufferSize);
-      int bytesRead = http.readBytes(buffer, bytesToRead);
-      
-      // Write to file
-      int bytesWrittenNow = firmwareFile.write(buffer, bytesRead);
-      
-      if (bytesWrittenNow != bytesRead) {
-        Serial.println("Warning: Not all bytes were written to SD card");
-        Serial.print("Attempted: ");
-        Serial.print(bytesRead);
-        Serial.print(", Written: ");
-        Serial.println(bytesWrittenNow);
-      }
-      
-      bytesWritten += bytesWrittenNow;
-      
-      // Show download progress, but only when percentage changes significantly
-      if (contentLength > 0) {
-        progressPercent = (bytesWritten * 100) / contentLength;
-        if (progressPercent != lastPercentReport && (progressPercent % 5 == 0)) {
-          lastPercentReport = progressPercent;
-          Serial.print("Download progress: ");
-          Serial.print(progressPercent);
-          Serial.println("%");
+
+  uint32_t totalDownloaded = alreadyDownloaded;
+  lastDataTime = millis();
+  downloadStartTime = millis();
+  receivingData = false;
+
+  while (true) {
+    if (http.available()) {
+      receivingData = true;
+      lastDataTime = millis();
+
+      size_t available = http.available();
+      size_t toRead = min(available, chunkSize);
+      int bytesRead = http.read(buff, toRead);
+
+      if (bytesRead > 0) {
+        size_t written = file.write(buff, bytesRead);
+        if (written != (size_t)bytesRead) {
+          Serial.println("Write error during resume.");
+          file.close();
+          return -1;
         }
-      } else {
-        // If content length is unknown, show progress every 10KB
-        if (bytesWritten % 10240 == 0) {
+
+        totalDownloaded += bytesRead;
+
+        if (totalDownloaded % 4096 == 0) {
+          Serial.print(".");
+        }
+
+        if (millis() - lastProgressTime > 5000) {
+          Serial.println();
           Serial.print("Downloaded: ");
-          Serial.print(bytesWritten / 1024);
-          Serial.println(" KB");
+          Serial.print(totalDownloaded / 1024);
+          Serial.print("KB");
+          Serial.println();
+          lastProgressTime = millis();
         }
-      }
-      
-      // Flush to SD card every 32KB to reduce the risk of data loss
-      if (bytesWritten % 32768 == 0) {
-        firmwareFile.flush();
       }
     } else {
-      // No data available, wait a bit
-      delay(20);
+      if (!http.connected()) {
+        Serial.println("\nDisconnected from server.");
+        break;
+      }
+
+      if (receivingData && (millis() - lastDataTime > 20000)) {
+        Serial.println("\nTimeout: No data for 20 seconds.");
+        break;
+      }
+
+      delay(100);
     }
-    
-    // Check if we've received all the data
-    if (contentLength > 0 && bytesWritten >= contentLength) {
+
+    if (millis() - downloadStartTime > 300000) {
+      Serial.println("\nDownload timeout (5 minutes).");
       break;
     }
   }
-  
-  // Ensure all data is written to the card
-  firmwareFile.flush();
-  
-  // Close the file
-  firmwareFile.close();
-  
-  // Stop the HTTP connection
-  http.stop();
-  
-  if (bytesWritten == 0) {
-    Serial.println("No data received");
-    return false;
+
+  file.close();
+
+  File finalFile = SD.open(FILE_NAME);
+  if (!finalFile) {
+    Serial.println("Failed to reopen file for verification.");
+    return -1;
   }
-  
-  Serial.print("Firmware download complete. Saved ");
-  Serial.print(bytesWritten);
-  Serial.print(" bytes (");
-  Serial.print(bytesWritten / 1024);
-  Serial.println(" KB) to SD card.");
-  
-  // Verify the downloaded file
-  File checkFile = SD.open(fileName);
-  if (!checkFile) {
-    Serial.println("Error: Could not open the downloaded firmware file for verification");
-    return false;
+
+  uint32_t finalSize = finalFile.size();
+  finalFile.close();
+
+  Serial.print("Final file size: ");
+  Serial.println(finalSize);
+
+  if (finalSize < EXPECTED_SIZE) {
+    Serial.println("Download not complete. Can resume later.");
+    return 1;
+  } else {
+    Serial.println("Firmware download complete!");
+    modem.gprsDisconnect();
+    return 0;
   }
-  
-  long fileSize = checkFile.size();
-  checkFile.close();
-  
-  Serial.print("Verified file size: ");
-  Serial.print(fileSize);
-  Serial.println(" bytes");
-  
-  if (fileSize != bytesWritten) {
-    Serial.println("Warning: File size does not match bytes written");
-  }
-  
-  return true;
 }
+
+void firmwareUpdate(String fileName, String resource) {
+  firmwareRename(fileName); // Rename old firmware file if it exists
+  int8_t downloadState = firmwareDownload(resource);
+
+  while (downloadState == 1) {
+    Serial.println("Retrying firmware download...");
+    downloadState = resumeFirmwareDownload(resource);
+  }
+  Serial.println("Firmware download completed successfully!");
+  // while (resumeFirmwareDownload(firmwareUrl) == 1) {
+  //   Serial.println("Retrying firmware download...");
+  //   delay(10000); // optional delay between retries
+  // }
+  // Serial.println("Firmware download completed successfully!");  
+}
+
