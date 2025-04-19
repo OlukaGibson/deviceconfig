@@ -412,6 +412,7 @@ void firmwareUpdate(String fileName, String resource) {
   while (downloadState == 1) {
     Serial.println("Retrying firmware download...");
     downloadState = resumeFirmwareDownload(resource);
+    delay(1000); 
   }
   Serial.println("Firmware download completed successfully!");
 
