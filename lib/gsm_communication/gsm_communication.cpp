@@ -186,7 +186,7 @@ int8_t firmwareDownload(String resource) {
   }
 
   // Prepare file for writing
-  File file = SD.open(FILE_NAME, FILE_WRITE);
+  File file = SD.open(FIRMWARE_NAME, FILE_WRITE);
   if (!file) {
     Serial.println("Failed to open file on SD card.");
     return;
@@ -260,7 +260,7 @@ int8_t firmwareDownload(String resource) {
   file.close();
   
   // Verify downloaded file
-  File readFile = SD.open(FILE_NAME);
+  File readFile = SD.open(FIRMWARE_NAME);
   if (readFile) {
     unsigned long fileSize = readFile.size();
     readFile.close();
@@ -290,7 +290,7 @@ int8_t firmwareDownload(String resource) {
 
 int8_t resumeFirmwareDownload(String resource) {
   // Check already downloaded size
-  File file = SD.open(FILE_NAME, FILE_WRITE);
+  File file = SD.open(FIRMWARE_NAME, FILE_WRITE);
   if (!file) {
     Serial.println("Failed to open file for resuming.");
     return -1;
@@ -383,7 +383,7 @@ int8_t resumeFirmwareDownload(String resource) {
 
   file.close();
 
-  File finalFile = SD.open(FILE_NAME);
+  File finalFile = SD.open(FIRMWARE_NAME);
   if (!finalFile) {
     Serial.println("Failed to reopen file for verification.");
     return -1;
@@ -414,10 +414,7 @@ void firmwareUpdate(String fileName, String resource) {
     downloadState = resumeFirmwareDownload(resource);
   }
   Serial.println("Firmware download completed successfully!");
-  // while (resumeFirmwareDownload(firmwareUrl) == 1) {
-  //   Serial.println("Retrying firmware download...");
-  //   delay(10000); // optional delay between retries
-  // }
-  // Serial.println("Firmware download completed successfully!");  
+
+  firmwareFlash();  
 }
 

@@ -14,7 +14,7 @@ void setup() {
 
   Serial1.begin(115200);
 
-  // Test the SD card first
+  // Test the SD card first 
   // testSDCard();
   // delay(1000);
 
@@ -41,7 +41,7 @@ void setup() {
   // getConfigData("1");
   // postMetaData("1", "2", "3", "4");
   // postDeviceData("1", "2", "3", "4", "5", "6", "7", "8");
-  firmwareUpdate("/firmware.bin", resource);
+  firmwareUpdate(FIRMWARE_NAME, resource);
 }
 
 void loop() {

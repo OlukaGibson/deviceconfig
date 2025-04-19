@@ -55,7 +55,7 @@ extern TinyGsmClient client;
 extern HttpClient http;
 
 // FOTA related variables
-extern const char FILE_NAME[];
+extern const char FIRMWARE_NAME[];
 extern const unsigned long EXPECTED_SIZE;
 extern const size_t chunkSize;
 extern byte buff[];
