@@ -26,27 +26,19 @@ int16_t sdHealthCheck(){
   }
 }
 
-void firmwareRename(String fileName) {
-  // If old file exists, rename it to backup
+void firmwareDelete(String fileName) {
+  Serial.println("Deleting existing firmware file: " + fileName);
   if (SD.exists(fileName)) {
-    Serial.println("Old firmware file exists. Renaming to backup...");
-    File oldFile = SD.open(fileName);
-    if (oldFile) {
-        File newFile = SD.open("/backup_firmware.bin", FILE_WRITE);
-        if (newFile) {
-            while (oldFile.available()) {
-                newFile.write(oldFile.read());
-            }
-            newFile.close();
-        }
-        oldFile.close();
-        SD.remove(fileName);
+    if (SD.remove(fileName)) {
+      Serial.println("File deleted successfully.");
     } else {
-        Serial.println("Failed to open old firmware file for renaming.");
+      Serial.println("Failed to delete file.");
     }
   } else {
-    Serial.println("No old firmware file found.");
+    Serial.println("File does not exist. No action taken.");
   }
+  delay(1000);
+  Serial.println("Deleting completed.");
 }
 
 void firmwareFlash(){

@@ -14,6 +14,8 @@
 #include <globalVariables.h>
 
 
+void disconnectGPRS(){}
+
 void powerGSM(bool state) {
     pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
     digitalWrite(GSM_POWER_SWITCH_PIN, state);
@@ -108,8 +110,8 @@ void postData(String url) {
         Serial.println("Failed to send data.");
     }
 
-    modem.gprsDisconnect();
-    Serial.println("Disconnected from GPRS.");
+    // modem.gprsDisconnect();
+    // Serial.println("Disconnected from GPRS.");
 }
 
 void deviceSelfConfig(String ccid) {
@@ -119,7 +121,61 @@ void deviceSelfConfig(String ccid) {
 
 void getConfigData(String deviceID) {
   String url = "/device/"+deviceID+"/getconfig";
-  postData(url);
+  
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
+
+  http.get(url);
+
+  int statusCode = http.responseStatusCode();
+  String response = http.responseBody();
+
+  Serial.print("Response Code: ");
+  Serial.println(statusCode);
+  Serial.print("Response Body: ");
+  Serial.println(response);
+
+  if (statusCode == 200) {
+    Serial.println("Config data received successfully!");
+    
+    // Parse the JSON response
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, response);
+    
+    if (error) {
+      Serial.print("JSON parsing failed: ");
+      Serial.println(error.c_str());
+    } else {
+      // Update global variables with configuration values
+      deploymentMode = doc["configs"][" Deployment Mode"] | "null";
+      batteryMonitoring = doc["configs"]["Chip Based battery monitoring"] | "null";
+      debugEnable = doc["configs"]["Debug Enable"] | "null";
+      pmSampleEntries = doc["configs"]["PM sample entries"] | "null";
+      spv = doc["configs"]["SPV"] | "null";
+      sdCardPin = doc["configs"]["Sd card pin"] | "null";
+      transmissionMode = doc["configs"]["Transmission Mode"] | "null";
+      firmwareVersion = String(doc["firmwareVersion"] | "null");
+      fileDownloadState = doc["fileDownloadState"] | false;
+      deviceID = doc["deviceID"] | "null";
+      
+      // Log retrieved values
+      Serial.println("Deployment Mode: " + deploymentMode);
+      Serial.println("Battery Monitoring: " + batteryMonitoring);
+      Serial.println("Debug Enable: " + debugEnable);
+      Serial.println("PM Sample Entries: " + pmSampleEntries);
+      Serial.println("SPV: " + spv);
+      Serial.println("SD Card Pin: " + sdCardPin);
+      Serial.println("Transmission Mode: " + transmissionMode);
+      Serial.println("Firmware Version: " + firmwareVersion);
+      Serial.println("File Download State: " + String(fileDownloadState ? "true" : "false"));
+      Serial.println("Device ID: " + deviceID);
+    }
+  } else {
+    Serial.println("Failed to get configuration data.");
+  }
+
+  // modem.gprsDisconnect();
+  // Serial.println("Disconnected from GPRS.");
 }
 
 void postMetaData(String metadata1, String metadata2, String metadata3, String metadata4) {
@@ -271,8 +327,8 @@ int8_t firmwareDownload(String resource) {
     Serial.println(fileSize);
 
     // Disconnect from network
-    modem.gprsDisconnect();
-    Serial.println("GPRS disconnected");
+    // modem.gprsDisconnect();
+    // Serial.println("GPRS disconnected");
 
     // Verify file size
     if (fileSize == EXPECTED_SIZE) {
@@ -398,21 +454,29 @@ int8_t resumeFirmwareDownload(String resource) {
   if (finalSize < EXPECTED_SIZE) {
     Serial.println("Download not complete. Can resume later.");
     return 1;
-  } else {
+  } else if (finalSize == EXPECTED_SIZE) {
     Serial.println("Firmware download complete!");
-    modem.gprsDisconnect();
+    // modem.gprsDisconnect();
+    disconnectGPRS();
     return 0;
+  }else {
+    Serial.println("File size mismatch. Possible error during download.");
+    return -1;
   }
 }
 
 void firmwareUpdate(String fileName, String resource) {
-  firmwareRename(fileName); // Rename old firmware file if it exists
+  firmwareDelete(fileName);
   int8_t downloadState = firmwareDownload(resource);
 
   while (downloadState == 1) {
     Serial.println("Retrying firmware download...");
     downloadState = resumeFirmwareDownload(resource);
     delay(1000); 
+  }
+  if (downloadState == -1) {
+    Serial.println("Firmware size mismatch. Attempting to redownload...");
+    firmwareUpdate(fileName, resource);
   }
   Serial.println("Firmware download completed successfully!");
 

@@ -12,11 +12,23 @@ String created_at;
 int8_t delta_t;
 String deviceName = getConfigValue("DEVICE_NAME");
 String apiKey = "L1FU10HZOQ745OCM"; //getConfigValue("DEVICE_WRITE_API_KEY");
-String channelId = getConfigValue("DEVICE_CHANEL_ID");
-extern float pms1_2_5;
-extern float pms1_10;
-extern float pms2_2_5;
-extern float pms2_10;
+String deviceID = "null";//getConfigValue("DEVICE_CHANEL_ID");
+String deploymentMode = "null";
+String batteryMonitoring = "null";
+String debugEnable = "null";
+String pmSampleEntries = "null";
+String spv = "null";
+String sdCardPin = "null";
+String transmissionMode = "null";
+String firmwareVersion = "42.74";
+bool fileDownloadState = false;
+// int deviceID = 0;
+
+//data variables
+float pms1_2_5;
+float pms1_10;
+float pms2_2_5;
+float pms2_10;
 float latitude;
 float longitude;
 float battery_voltage;
@@ -54,3 +66,5 @@ unsigned long lastProgressTime = millis();
 unsigned long downloadStartTime = millis();
 unsigned long lastDataTime = millis();
 boolean receivingData = false;
+
+//configuration variables

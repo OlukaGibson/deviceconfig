@@ -14,8 +14,20 @@
 extern String created_at;
 extern int8_t delta_t;
 extern String deviceName;
-extern String channelID; //uint32_t
+extern String deviceID; //uint32_t
 extern String apiKey;
+extern String deploymentMode;
+extern String batteryMonitoring;
+extern String debugEnable;
+extern String pmSampleEntries;
+extern String spv;
+extern String sdCardPin;
+extern String transmissionMode;
+extern String firmwareVersion;
+extern bool fileDownloadState;
+// extern int deviceID;
+
+
 extern float pms1_2_5;
 extern float pms1_10;
 extern float pms2_2_5;
