@@ -25,6 +25,7 @@ extern String sdCardPin;
 extern String transmissionMode;
 extern String firmwareVersion;
 extern bool fileDownloadState;
+extern String firmwareCRC32;
 // extern int deviceID;
 
 

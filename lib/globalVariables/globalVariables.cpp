@@ -22,6 +22,7 @@ String sdCardPin = "null";
 String transmissionMode = "null";
 String firmwareVersion = "42.74";
 bool fileDownloadState = false;
+String firmwareCRC32 = "null";
 // int deviceID = 0;
 
 //data variables

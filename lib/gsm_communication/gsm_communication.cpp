@@ -14,7 +14,10 @@
 #include <globalVariables.h>
 
 
-void disconnectGPRS(){}
+void disconnectGPRS(){
+  modem.gprsDisconnect();
+  Serial.println("Disconnected from GPRS.");
+}
 
 void powerGSM(bool state) {
     pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
@@ -156,7 +159,8 @@ void getConfigData(String deviceID) {
       transmissionMode = doc["configs"]["Transmission Mode"] | "null";
       firmwareVersion = String(doc["firmwareVersion"] | "null");
       fileDownloadState = doc["fileDownloadState"] | false;
-      deviceID = doc["deviceID"] | "null";
+      deviceID = String(doc["deviceID"] | "null");
+      firmwareCRC32 = doc["firmwareCRC32"] | "null";
       
       // Log retrieved values
       Serial.println("Deployment Mode: " + deploymentMode);
@@ -169,6 +173,7 @@ void getConfigData(String deviceID) {
       Serial.println("Firmware Version: " + firmwareVersion);
       Serial.println("File Download State: " + String(fileDownloadState ? "true" : "false"));
       Serial.println("Device ID: " + deviceID);
+      Serial.println("Firmware CRC32: " + firmwareCRC32);
     }
   } else {
     Serial.println("Failed to get configuration data.");
@@ -475,8 +480,10 @@ void firmwareUpdate(String fileName, String resource) {
     delay(1000); 
   }
   if (downloadState == -1) {
-    Serial.println("Firmware size mismatch. Attempting to redownload...");
-    firmwareUpdate(fileName, resource);
+    // Serial.println("Firmware size mismatch. Attempting to redownload...");
+    // firmwareUpdate(fileName, resource);
+    Serial.println("Firmware size mismatch");
+    return;
   }
   Serial.println("Firmware download completed successfully!");
 
