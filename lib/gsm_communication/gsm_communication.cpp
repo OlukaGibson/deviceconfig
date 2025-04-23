@@ -487,7 +487,7 @@ void firmwareUpdate(String fileName, String resource) {
   
   int8_t downloadState = firmwareDownload(resource);
   // int8_t downloadState = 1;
-  
+
   // Only retry if download was interrupted but is resumable
   while (downloadState == 1) {
     Serial.println("Retrying firmware download...");
@@ -504,7 +504,7 @@ void firmwareUpdate(String fileName, String resource) {
   if (SD.exists(fileName)) {
     Serial.println("Firmware download completed successfully!");
     
-    // Attempt to verify and flash the firmware
+    //verify and flash the firmware
     verifyFirmware(fileName, firmwareCRC32);
   } else {
     Serial.println("Firmware file not found after download attempt");

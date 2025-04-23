@@ -12,6 +12,7 @@
 
 void powerGSM(bool state);
 int8_t gsmHealthCheck();
+void disconnectGPRS();
 void checkNetwork();
 void connectGPRS();
 String getIMSI();
