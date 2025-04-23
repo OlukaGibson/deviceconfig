@@ -7,6 +7,7 @@
 void powerSD(bool state);
 int16_t sdHealthCheck();
 void firmwareDelete(String fileName);
+void verifyFirmware(String fileName, String firmwareCRC32);
 void firmwareFlash();
 
 #endif

@@ -4,7 +4,6 @@
 #include <pin_definition.h>
 #include <sd_card.h>
 
-const char resource[] = "/firmware/42.74/download/firmwarebin";
 
 void setup() {
   Serial.begin(115200);
@@ -41,6 +40,8 @@ void setup() {
   // getConfigData("1");
   // postMetaData("1", "2", "3", "4");
   // postDeviceData("1", "2", "3", "4", "5", "6", "7", "8");
+  String resource = "/firmware/" + firmwareVersion + "/download/firmwarebin";
+  Serial.println("Resource: " + resource);
   firmwareUpdate(FIRMWARE_NAME, resource);
 }
 

@@ -229,10 +229,10 @@ int8_t firmwareDownload(String resource) {
   Serial.print("Status code: ");
   Serial.println(statusCode);
 
-  if (statusCode != 200 || statusCode != 206) {
+  if (statusCode != 200 && statusCode != 206) {
     Serial.print("Failed to get file. Status code: ");
     Serial.println(statusCode);
-    return;
+    return -1;  // Return error code
   }
 
   // Get content length
@@ -250,8 +250,15 @@ int8_t firmwareDownload(String resource) {
   File file = SD.open(FIRMWARE_NAME, FILE_WRITE);
   if (!file) {
     Serial.println("Failed to open file on SD card.");
-    return;
+    return -1;
   }
+
+  // Reset tracking variables
+  downloaded = 0;
+  receivingData = false;
+  lastDataTime = millis();
+  downloadStartTime = millis();
+  lastProgressTime = millis();
 
   while (true) {
     // Check for available data
@@ -336,7 +343,7 @@ int8_t firmwareDownload(String resource) {
     // Serial.println("GPRS disconnected");
 
     // Verify file size
-    if (fileSize == EXPECTED_SIZE) {
+    if (fileSize < EXPECTED_SIZE) {
       Serial.println("WARNING: File appears incomplete!");
       return 1;
     } else {
@@ -364,6 +371,9 @@ int8_t resumeFirmwareDownload(String resource) {
   // Setup HTTP with Range header
   http.beginRequest();
   http.sendHeader("Range", "bytes=" + String(alreadyDownloaded) + "-");
+  Serial.print("Range: bytes=");
+  Serial.print(alreadyDownloaded);
+  Serial.println("-");
   http.get(resource);
   http.sendHeader("Accept", "application/octet-stream");
   http.endRequest();
@@ -455,6 +465,8 @@ int8_t resumeFirmwareDownload(String resource) {
 
   Serial.print("Final file size: ");
   Serial.println(finalSize);
+  Serial.print("EXPECTED_SIZE: ");
+  Serial.println(EXPECTED_SIZE);
 
   if (finalSize < EXPECTED_SIZE) {
     Serial.println("Download not complete. Can resume later.");
@@ -472,21 +484,29 @@ int8_t resumeFirmwareDownload(String resource) {
 
 void firmwareUpdate(String fileName, String resource) {
   firmwareDelete(fileName);
+  
   int8_t downloadState = firmwareDownload(resource);
-
+  // int8_t downloadState = 1;
+  
+  // Only retry if download was interrupted but is resumable
   while (downloadState == 1) {
     Serial.println("Retrying firmware download...");
-    downloadState = resumeFirmwareDownload(resource);
     delay(1000); 
+    downloadState = resumeFirmwareDownload(resource);
   }
+  
   if (downloadState == -1) {
-    // Serial.println("Firmware size mismatch. Attempting to redownload...");
-    // firmwareUpdate(fileName, resource);
-    Serial.println("Firmware size mismatch");
+    Serial.println("Firmware download failed");
     return;
   }
-  Serial.println("Firmware download completed successfully!");
-
-  firmwareFlash();  
+  
+  // Verify file exists before announcing completion
+  if (SD.exists(fileName)) {
+    Serial.println("Firmware download completed successfully!");
+    
+    // Attempt to verify and flash the firmware
+    verifyFirmware(fileName, firmwareCRC32);
+  } else {
+    Serial.println("Firmware file not found after download attempt");
+  }
 }
-

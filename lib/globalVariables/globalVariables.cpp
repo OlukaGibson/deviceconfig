@@ -22,7 +22,7 @@ String sdCardPin = "null";
 String transmissionMode = "null";
 String firmwareVersion = "42.74";
 bool fileDownloadState = false;
-String firmwareCRC32 = "null";
+String firmwareCRC32 = "103848AF";
 // int deviceID = 0;
 
 //data variables
@@ -59,7 +59,7 @@ HttpClient http(client, serverurl1, 80);
 
 // FOTA related variables
 const char FIRMWARE_NAME[] = "/firmware.bin";
-const unsigned long EXPECTED_SIZE = 128400;
+const unsigned long EXPECTED_SIZE = 128406;
 const size_t chunkSize = 1024; // 1KB chunks
 byte buff[chunkSize];
 unsigned long downloaded = 0;
