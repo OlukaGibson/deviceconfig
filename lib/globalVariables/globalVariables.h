@@ -8,6 +8,9 @@
 #include <ArduinoHttpClient.h>
 #include <Arduino.h>
 #include <pin_definition.h>
+#include <ArduinoJson.h>
+#include <SD.h>
+#include <TinyGsmClient.h>
 
 
 // variables for control
@@ -27,6 +30,31 @@ extern String firmwareVersion;
 extern bool fileDownloadState;
 extern String firmwareCRC32;
 // extern int deviceID;
+
+extern String responseData;
+extern const uint32_t WRITTEN_SIGNATURE;
+extern const int SIGNATURE_ADDRESS;
+
+typedef struct
+{
+    char DEVICE_NAME[32];
+    char DEVICE_WRITE_API_KEY[32];
+    char DEVICE_READ_API_KEY[32];
+    char DEVICE_CHANEL_ID[32];
+    char DEVICE_FIRMWARE_VERSION[32];
+    char DEVICE_FIRMWARE_CRC32[32];
+    int DEVICE_SAMPLE_INTERVAL_MINUTES;
+    int DEVICE_UPLOAD_INTERVAL_MINUTES;
+    int DEPLOYMENT_MODE;
+    int BATTERY_MONITORING;
+    int DEBUG_ENABLE;
+    int PM_SAMPLE_ENTRIES;
+    int SPV;
+    int SD_CARD_PIN;
+    int TRANSMISSION_MODE;
+    int SAMPLE_ENTRIES;
+} EEPROM_CONFIGURATION_STRUCT;
+extern EEPROM_CONFIGURATION_STRUCT eeprom_configuration_struct;
 
 
 extern float pms1_2_5;

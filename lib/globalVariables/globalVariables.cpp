@@ -6,11 +6,15 @@
 #include "globalVariables.h"
 #include <gsm_communication.h>
 #include <eeprom_config.h>
+#include <pin_definition.h>
+#include <ArduinoJson.h>
+#include <SD.h>
+#include <TinyGsm.h>
 
 // variables for control
 String created_at;
 int8_t delta_t;
-String deviceName = getConfigValue("DEVICE_NAME");
+// String deviceName = getConfigValue("DEVICE_NAME");
 String apiKey = "L1FU10HZOQ745OCM"; //getConfigValue("DEVICE_WRITE_API_KEY");
 String deviceID = "null";//getConfigValue("DEVICE_CHANEL_ID");
 String deploymentMode = "null";
@@ -24,6 +28,12 @@ String firmwareVersion = "42.74";
 bool fileDownloadState = false;
 String firmwareCRC32 = "103848AF";
 // int deviceID = 0;
+
+String responseData = "null";
+const uint32_t WRITTEN_SIGNATURE = 0xBEEFDEED;
+const int SIGNATURE_ADDRESS = 0;
+EEPROM_CONFIGURATION_STRUCT eeprom_configuration_struct;
+
 
 //data variables
 float pms1_2_5;
@@ -50,7 +60,7 @@ struct pms5003data pmdata;
 const char apn[] = "TM";
 const char user[] = "";
 const char pass[] = "";
-const char serverurl1[] = "34.132.108.60";
+const char serverurl1[] = "34.135.156.106";//"34.132.108.60";
 const char serverurl2[] = "api.thingspeak.com";
 
 TinyGsm modem(Serial1);

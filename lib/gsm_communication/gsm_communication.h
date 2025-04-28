@@ -20,7 +20,7 @@ String getCCID();
 String getIMEI();
 String getSignalQuality();
 
-void deviceSelfConfig(String ccid);
+void getEEPROMData(String ccid);
 void getConfigData(String deviceID);
 void postMetaData(String metadata1, String metadata2, String metadata3, String metadata4);
 void postDeviceData(String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8);

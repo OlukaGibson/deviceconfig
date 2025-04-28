@@ -99,27 +99,30 @@ void postData(String url) {
     http.get(url);
 
     int statusCode = http.responseStatusCode();
-    String response = http.responseBody();
+    responseData = http.responseBody();
 
     Serial.print("Response Code: ");
     Serial.println(statusCode);
     Serial.print("Response Body: ");
-    Serial.println(response);
+    Serial.println(responseData);
 
     if (statusCode == 200) {
         Serial.println("Data sent successfully!");
+        // return response;
         // updateEEPROMFromResponse(response); // Update EEPROM with response data
     } else {
         Serial.println("Failed to send data.");
+        // return "null";
     }
 
     // modem.gprsDisconnect();
     // Serial.println("Disconnected from GPRS.");
 }
 
-void deviceSelfConfig(String ccid) {
-  String url = "/device/"+ccid+"/selfconfig"; //"/";
+void getEEPROMData(String ccid) {
+  String url =  "/device/"+ccid+"/selfconfig"; //"/";
   postData(url);
+  // return postData(url);
 }
 
 void getConfigData(String deviceID) {

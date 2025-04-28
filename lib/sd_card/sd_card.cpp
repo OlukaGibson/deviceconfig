@@ -1,13 +1,19 @@
+#define TINY_GSM_MODEM_SIM800
+
 #include "sd_card.h"
-#include <pin_definition.h>
+#include <avr/wdt.h>
 #include <SD.h>
 #include <SPI.h>
 #include <globalVariables.h>
 #include <gsm_communication.h>
 #include <Arduino.h>
-#include <avr/wdt.h>
+#include <ArduinoHttpClient.h>
 #include <EEPROM.h>
 #include <CRC32.h>
+#include <pin_definition.h>
+#include <TinyGsmClient.h>
+#include <TinyGsm.h>
+#include <ArduinoJson.h>
 
 CRC32 crc;
 

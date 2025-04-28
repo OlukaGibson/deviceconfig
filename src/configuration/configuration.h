@@ -1,6 +1,6 @@
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
+// #ifndef CONFIGURATION_H
+// #define CONFIGURATION_H
 
-void checkEEPROM();
+// void checkEEPROM();
 
-#endif // CONFIGURATION_H
+// #endif // CONFIGURATION_H
