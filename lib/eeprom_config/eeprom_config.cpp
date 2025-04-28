@@ -52,7 +52,6 @@ void deviceSelfConfig(String configJson) {
     eeprom_configuration_struct.SPV = configs["SPV"] | 100;
     eeprom_configuration_struct.SD_CARD_PIN = configs["Sd card pin"] | 28;
     eeprom_configuration_struct.TRANSMISSION_MODE = configs["Transmission Mode"] | 0;
-    eeprom_configuration_struct.SAMPLE_ENTRIES = eeprom_configuration_struct.PM_SAMPLE_ENTRIES; // Assuming you want same
   
     // Finally, save to EEPROM
     saveConfigurationToEEPROM();

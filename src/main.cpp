@@ -1,14 +1,14 @@
+#include <SD.h>
+#include <sd_card.h>
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <eeprom_config.h>
+#include <TinyGsmClient.h>
+#include <pin_definition.h>
+#include <globalVariables.h>
+#include <ArduinoHttpClient.h>
 #include <gsm_communication.h>
 #include "configuration/configuration.h"
-#include <pin_definition.h>
-#include <sd_card.h>
-#include <globalVariables.h>
-#include <ArduinoJson.h>
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
-#include <eeprom_config.h>
-#include <SD.h>
 
 
 void setup() {

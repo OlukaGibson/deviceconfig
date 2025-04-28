@@ -3,12 +3,34 @@
 
 #define TINY_GSM_MODEM_SIM800
 
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
+#include <SD.h>
 #include <Arduino.h>
+#include <sd_card.h>
+#include <ArduinoJson.h>
+#include <eeprom_config.h>
+#include <TinyGsmClient.h>
 #include <pin_definition.h>
 #include <globalVariables.h>
+#include <ArduinoHttpClient.h>
 
+// Config structure to hold the configuration data
+typedef struct {
+    String deviceID;
+    String apiKey;
+    String batteryMonitoring;
+    String debugEnable;
+    String pmSampleEntries;
+    String spv;
+    String sdCardPin;
+    String transmissionMode;
+    String deploymentMode;
+    String firmwareVersion;
+    String firmwareCRC32;
+    bool fileDownloadState;
+} ConfigData;
+
+// Global instance of the configuration data
+extern ConfigData configData;
 
 void powerGSM(bool state);
 int8_t gsmHealthCheck();

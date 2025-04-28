@@ -1,17 +1,17 @@
 #define TINY_GSM_MODEM_SIM800
-
 #include "gsm_communication.h"
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
-#include <SoftwareSerial.h>
+
+#include <SD.h>
 #include <Arduino.h>
-#include <pin_definition.h>
+#include <sd_card.h>
 #include <ArduinoJson.h>
 #include <eeprom_config.h>
-#include <SD.h>
+#include <TinyGsmClient.h>
+#include <SoftwareSerial.h>
 #include <pin_definition.h>
-#include <sd_card.h>
+#include <pin_definition.h>
 #include <globalVariables.h>
+#include <ArduinoHttpClient.h>
 
 
 void disconnectGPRS(){
@@ -126,73 +126,73 @@ void getEEPROMData(String ccid) {
 }
 
 void getConfigData(String deviceID) {
-  String url = "/device/"+deviceID+"/getconfig";
+  // String url = "/device/"+deviceID+"/getconfig";
   
-  Serial.print("Requesting URL: ");
-  Serial.println(url);
+  // Serial.print("Requesting URL: ");
+  // Serial.println(url);
 
-  http.get(url);
+  // http.get(url);
 
-  int statusCode = http.responseStatusCode();
-  String response = http.responseBody();
+  // int statusCode = http.responseStatusCode();
+  // String response = http.responseBody();
 
-  Serial.print("Response Code: ");
-  Serial.println(statusCode);
-  Serial.print("Response Body: ");
-  Serial.println(response);
+  // Serial.print("Response Code: ");
+  // Serial.println(statusCode);
+  // Serial.print("Response Body: ");
+  // Serial.println(response);
 
-  if (statusCode == 200) {
-    Serial.println("Config data received successfully!");
+  // if (statusCode == 200) {
+  //   Serial.println("Config data received successfully!");
     
-    // Parse the JSON response
-    DynamicJsonDocument doc(1024);
-    DeserializationError error = deserializeJson(doc, response);
+  //   // Parse the JSON response
+  //   DynamicJsonDocument doc(1024);
+  //   DeserializationError error = deserializeJson(doc, response);
     
-    if (error) {
-      Serial.print("JSON parsing failed: ");
-      Serial.println(error.c_str());
-    } else {
-      // Update global variables with configuration values
-      deploymentMode = doc["configs"][" Deployment Mode"] | "null";
-      batteryMonitoring = doc["configs"]["Chip Based battery monitoring"] | "null";
-      debugEnable = doc["configs"]["Debug Enable"] | "null";
-      pmSampleEntries = doc["configs"]["PM sample entries"] | "null";
-      spv = doc["configs"]["SPV"] | "null";
-      sdCardPin = doc["configs"]["Sd card pin"] | "null";
-      transmissionMode = doc["configs"]["Transmission Mode"] | "null";
-      firmwareVersion = String(doc["firmwareVersion"] | "null");
-      fileDownloadState = doc["fileDownloadState"] | false;
-      deviceID = String(doc["deviceID"] | "null");
-      firmwareCRC32 = doc["firmwareCRC32"] | "null";
+  //   if (error) {
+  //     Serial.print("JSON parsing failed: ");
+  //     Serial.println(error.c_str());
+  //   } else {
+  //     // Update global variables with configuration values
+  //     deploymentMode = doc["configs"][" Deployment Mode"] | "null";
+  //     batteryMonitoring = doc["configs"]["Chip Based battery monitoring"] | "null";
+  //     debugEnable = doc["configs"]["Debug Enable"] | "null";
+  //     pmSampleEntries = doc["configs"]["PM sample entries"] | "null";
+  //     spv = doc["configs"]["SPV"] | "null";
+  //     sdCardPin = doc["configs"]["Sd card pin"] | "null";
+  //     transmissionMode = doc["configs"]["Transmission Mode"] | "null";
+  //     firmwareVersion = String(doc["firmwareVersion"] | "null");
+  //     fileDownloadState = doc["fileDownloadState"] | false;
+  //     deviceID = String(doc["deviceID"] | "null");
+  //     firmwareCRC32 = doc["firmwareCRC32"] | "null";
       
-      // Log retrieved values
-      Serial.println("Deployment Mode: " + deploymentMode);
-      Serial.println("Battery Monitoring: " + batteryMonitoring);
-      Serial.println("Debug Enable: " + debugEnable);
-      Serial.println("PM Sample Entries: " + pmSampleEntries);
-      Serial.println("SPV: " + spv);
-      Serial.println("SD Card Pin: " + sdCardPin);
-      Serial.println("Transmission Mode: " + transmissionMode);
-      Serial.println("Firmware Version: " + firmwareVersion);
-      Serial.println("File Download State: " + String(fileDownloadState ? "true" : "false"));
-      Serial.println("Device ID: " + deviceID);
-      Serial.println("Firmware CRC32: " + firmwareCRC32);
-    }
-  } else {
-    Serial.println("Failed to get configuration data.");
-  }
+  //     // Log retrieved values
+  //     Serial.println("Deployment Mode: " + deploymentMode);
+  //     Serial.println("Battery Monitoring: " + batteryMonitoring);
+  //     Serial.println("Debug Enable: " + debugEnable);
+  //     Serial.println("PM Sample Entries: " + pmSampleEntries);
+  //     Serial.println("SPV: " + spv);
+  //     Serial.println("SD Card Pin: " + sdCardPin);
+  //     Serial.println("Transmission Mode: " + transmissionMode);
+  //     Serial.println("Firmware Version: " + firmwareVersion);
+  //     Serial.println("File Download State: " + String(fileDownloadState ? "true" : "false"));
+  //     Serial.println("Device ID: " + deviceID);
+  //     Serial.println("Firmware CRC32: " + firmwareCRC32);
+  //   }
+  // } else {
+  //   Serial.println("Failed to get configuration data.");
+  // }
 
-  // modem.gprsDisconnect();
-  // Serial.println("Disconnected from GPRS.");
+  // // modem.gprsDisconnect();
+  // // Serial.println("Disconnected from GPRS.");
 }
 
 void postMetaData(String metadata1, String metadata2, String metadata3, String metadata4) {
-  String url = "/metadataupdate?api_key=" + apiKey + "&metadata1=" + metadata1 + "&metadata2=" + metadata2 + "&metadata3=" + metadata3 + "&metadata4=" + metadata4;
+  String url = "/metadataupdate?api_key=" + loadDataFromEEPROM("DEVICE_WRITE_API_KEY") + "&metadata1=" + metadata1 + "&metadata2=" + metadata2 + "&metadata3=" + metadata3 + "&metadata4=" + metadata4;
   postData(url);
 }
 
 void postDeviceData(String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8) {
-  String url = "/update?api_key=" + apiKey + "&field1=" + field1 + "&field2=" + field2 + "&field3=" + field3 + "&field4=" + field4 + "&field5=" + field5 + "&field6=" + field6 + "&field7=" + field7 + "&field8=" + field8;
+  String url = "/update?api_key=" + loadDataFromEEPROM("DEVICE_WRITE_API_KEY") + "&field1=" + field1 + "&field2=" + field2 + "&field3=" + field3 + "&field4=" + field4 + "&field5=" + field5 + "&field6=" + field6 + "&field7=" + field7 + "&field8=" + field8;
   postData(url);
 }
 
@@ -508,7 +508,7 @@ void firmwareUpdate(String fileName, String resource) {
     Serial.println("Firmware download completed successfully!");
     
     //verify and flash the firmware
-    verifyFirmware(fileName, firmwareCRC32);
+    verifyFirmware(fileName, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
   } else {
     Serial.println("Firmware file not found after download attempt");
   }

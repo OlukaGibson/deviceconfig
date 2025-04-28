@@ -4,33 +4,37 @@
 // Define the modem type before including the TinyGSM library
 #define TINY_GSM_MODEM_SIM800
 
-#include <TinyGsm.h>
-#include <ArduinoHttpClient.h>
-#include <Arduino.h>
-#include <pin_definition.h>
-#include <ArduinoJson.h>
 #include <SD.h>
+#include <Arduino.h>
+#include <TinyGsm.h>
+#include <ArduinoJson.h>
+#include <eeprom_config.h>
 #include <TinyGsmClient.h>
+#include <pin_definition.h>
+#include <ArduinoHttpClient.h>
+#include <gsm_communication.h>
 
 
 // variables for control
+
+// extern String deviceName;
+// extern String deviceID; //uint32_t
+// extern String apiKey;
+// extern String deploymentMode;
+// extern String batteryMonitoring;
+// extern String debugEnable;
+// extern String pmSampleEntries;
+// extern String spv;
+// extern String sdCardPin;
+// extern String transmissionMode;
+// extern String firmwareVersion;
+
+// extern String firmwareCRC32;
+// // extern int deviceID;
+
 extern String created_at;
 extern int8_t delta_t;
-extern String deviceName;
-extern String deviceID; //uint32_t
-extern String apiKey;
-extern String deploymentMode;
-extern String batteryMonitoring;
-extern String debugEnable;
-extern String pmSampleEntries;
-extern String spv;
-extern String sdCardPin;
-extern String transmissionMode;
-extern String firmwareVersion;
 extern bool fileDownloadState;
-extern String firmwareCRC32;
-// extern int deviceID;
-
 extern String responseData;
 extern const uint32_t WRITTEN_SIGNATURE;
 extern const int SIGNATURE_ADDRESS;

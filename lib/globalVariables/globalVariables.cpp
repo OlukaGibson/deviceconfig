@@ -1,34 +1,36 @@
 #define TINY_GSM_MODEM_SIM800
-
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
-#include <Arduino.h>
 #include "globalVariables.h"
-#include <gsm_communication.h>
-#include <eeprom_config.h>
-#include <pin_definition.h>
-#include <ArduinoJson.h>
+
 #include <SD.h>
+#include <Arduino.h>
 #include <TinyGsm.h>
+#include <ArduinoJson.h>
+#include <eeprom_config.h>
+#include <TinyGsmClient.h>
+#include <pin_definition.h>
+#include <ArduinoHttpClient.h>
+#include <gsm_communication.h>
 
 // variables for control
+
+// // String deviceName = getConfigValue("DEVICE_NAME");
+// String apiKey = "L1FU10HZOQ745OCM"; //getConfigValue("DEVICE_WRITE_API_KEY");
+// String deviceID = "null";//getConfigValue("DEVICE_CHANEL_ID");
+// String deploymentMode = "null";
+// String batteryMonitoring = "null";
+// String debugEnable = "null";
+// String pmSampleEntries = "null";
+// String spv = "null";
+// String sdCardPin = "null";
+// String transmissionMode = "null";
+// String firmwareVersion = "42.74";
+
+// String firmwareCRC32 = "103848AF";
+// // int deviceID = 0;
+
 String created_at;
 int8_t delta_t;
-// String deviceName = getConfigValue("DEVICE_NAME");
-String apiKey = "L1FU10HZOQ745OCM"; //getConfigValue("DEVICE_WRITE_API_KEY");
-String deviceID = "null";//getConfigValue("DEVICE_CHANEL_ID");
-String deploymentMode = "null";
-String batteryMonitoring = "null";
-String debugEnable = "null";
-String pmSampleEntries = "null";
-String spv = "null";
-String sdCardPin = "null";
-String transmissionMode = "null";
-String firmwareVersion = "42.74";
 bool fileDownloadState = false;
-String firmwareCRC32 = "103848AF";
-// int deviceID = 0;
-
 String responseData = "null";
 const uint32_t WRITTEN_SIGNATURE = 0xBEEFDEED;
 const int SIGNATURE_ADDRESS = 0;
