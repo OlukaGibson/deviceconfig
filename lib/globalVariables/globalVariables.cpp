@@ -1,4 +1,4 @@
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 #include "globalVariables.h"
 
 #include <SD.h>

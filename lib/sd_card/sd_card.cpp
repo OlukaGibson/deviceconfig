@@ -24,17 +24,17 @@ CRC32 crc;
 void powerSD(bool state) {
   pinMode(SD_POWER_SWITCH_PIN, OUTPUT);
   digitalWrite(SD_POWER_SWITCH_PIN, state);
-  Serial.println("SD power state: " + String(state ? "ON" : "OFF"));
+  // Serial.println("SD power state: " + String(state ? "ON" : "OFF"));
   delay(1000);
 }
 
 int sdHealthCheck(){
   SPI.begin();
   if (!SD.begin(SD_CS_PIN)){
-    Serial.println("SD card init failed!");
+    // Serial.println("SD card init failed!");
     return 2;
   }else{
-    Serial.println("SD card initialized.");
+    // Serial.println("SD card initialized.");
     return 0;
   }
 }

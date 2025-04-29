@@ -24,8 +24,8 @@ void disconnectGPRS(){
 void powerGSM(bool state) {
     pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
     digitalWrite(GSM_POWER_SWITCH_PIN, state);
-    Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
-    delay(1000);
+    // Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
+    delay(2000);
 }
 
 void checkNetwork() {
@@ -36,20 +36,22 @@ void checkNetwork() {
 }
 
 int gsmHealthCheck() {
-    Serial1.println("AT");
-    delay(1000);
-    String response = "";
-    while (Serial1.available()) {
-        char c = Serial1.read();
-        if (isDigit(c)) { // Only keep numeric characters
-            response += c;
-        }
-    }
-    if (response.length() > 0) {
-        return 0; // GSM module is responding
-    } else {
-        return 1; // GSM module is not responding
-    }
+  // Serial.println("Testing GSM modem...");
+  
+  // Use TinyGSM's init/restart function to test if modem is responsive
+  if (modem.testAT(1000)) {  // Test with 1000ms timeout
+      // Serial.println("GSM modem is responding");
+      
+      // You can perform additional checks if needed
+      // String modemInfo = modem.getModemInfo();
+      // Serial.print("Modem info: ");
+      // Serial.println(modemInfo);
+      
+      return 0; // GSM module is responding
+  } else {
+      // Serial.println("GSM modem not responding");
+      return 1; // GSM module is not responding
+  }
 }
 
 String getGSMData(){

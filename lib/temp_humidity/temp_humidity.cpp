@@ -11,7 +11,7 @@
 void powerTHSensor(bool state){
     pinMode(DHT_SHT_POWER_SWITCH_PIN, OUTPUT);
     digitalWrite(DHT_SHT_POWER_SWITCH_PIN, state);
-    Serial.println("Temperature and Humidity Sensor power state: " + String(state ? "ON" : "OFF"));
+    // Serial.println("Temperature and Humidity Sensor power state: " + String(state ? "ON" : "OFF"));
     delay(1000);
 }
 
@@ -22,21 +22,21 @@ int thSensorHealthCheck(String sensor){
         float h = dht.readHumidity();
         float t = dht.readTemperature();
         if (isnan(h) || isnan(t)) {
-            Serial.println("Failed to read from DHT sensor!");
+            // Serial.println("Failed to read from DHT sensor!");
             return 64; // Error reading DHT sensor
         } else {
-            Serial.print("Humidity: ");
-            Serial.print(h);
-            Serial.print("%  Temperature: ");
-            Serial.print(t);
-            Serial.println("°C");
+            // Serial.print("Humidity: ");
+            // Serial.print(h);
+            // Serial.print("%  Temperature: ");
+            // Serial.print(t);
+            // Serial.println("°C");
             return 0; // Success
         }
     } else if (sensor == "SHT"){
         Wire.begin();
         // sht25;
         if (!sht25.begin()) {
-            Serial.println("Failed to initialize SHT sensor!");
+            // Serial.println("Failed to initialize SHT sensor!");
             return 32; // Error initializing SHT sensor
         } else {
             float h = sht25.getHumidity();
@@ -45,16 +45,16 @@ int thSensorHealthCheck(String sensor){
                 Serial.println("Failed to read from SHT sensor!");
                 return 32; // Error reading SHT sensor
             } else {
-                Serial.print("Humidity: ");
-                Serial.print(h);
-                Serial.print("%  Temperature: ");
-                Serial.print(t);
-                Serial.println("°C");
+                // Serial.print("Humidity: ");
+                // Serial.print(h);
+                // Serial.print("%  Temperature: ");
+                // Serial.print(t);
+                // Serial.println("°C");
                 return 0; // Success
             }
         }
     } else {
-        Serial.println("Invalid sensor type.");
+        // Serial.println("Invalid sensor type.");
         return 32; // Invalid sensor type
     }
 }

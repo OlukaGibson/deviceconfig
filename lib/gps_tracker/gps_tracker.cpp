@@ -21,25 +21,48 @@ void powerGPS(bool state){
     delay(1000);
 }
 
-int gpsHealthCheck(){
-    // powerGPS(1);
-    // delay(1000);
-    Serial2.begin(115200);
-    delay(1000);
+int gpsHealthCheck() {
+    unsigned long startTime = millis();
+    const unsigned long timeout = 5000; // 5-second timeout
+    
+    // Clear any existing GPS data
+    while (Serial2.available())
+        Serial2.read();
+
+    // Send the power on command if using a cellular+GPS module
     Serial2.println("AT+CGNSPWR=1");
-    delay(1000);
-    String response = "";
-    while (Serial2.available()) {
-        char c = Serial2.read();
-        if (isDigit(c)) { // Only keep numeric characters
-            response += c;
+    delay(100);
+    
+    // Try to get valid GPS data
+    bool validData = false;
+    Serial.println("Checking GPS health...");
+    
+    while (millis() - startTime < timeout) {
+        while (Serial2.available() > 0) {
+            char c = Serial2.read();
+            if (gps.encode(c)) {
+                // Check if we have valid data
+                if (gps.location.isValid() || 
+                    gps.date.isValid() || 
+                    gps.time.isValid() ||
+                    gps.satellites.isValid()) {
+                    validData = true;
+                    // Serial.println("GPS module is responding with valid data");
+                    return 0; // GPS is healthy
+                }
+            }
+        }
+        
+        // Print a dot every second to show progress
+        static unsigned long lastDotTime = 0;
+        if (millis() - lastDotTime > 1000) {
+            // Serial.print(".");
+            lastDotTime = millis();
         }
     }
-    if (response.length() > 0) {
-        return 0; // GPS module is responding
-    } else {
-        return 16; // GPS module is not responding
-    }
+    
+    // Serial.println("\nNo valid GPS data received");
+    return 16; // GPS module is not responding with valid data
 }
 
 GPSData getGPSData(unsigned long timeout) {

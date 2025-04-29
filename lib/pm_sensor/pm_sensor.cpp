@@ -2,10 +2,12 @@
 
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
+#include <SoftwareSerial.h>
 #include <pin_definition.h>
 #include <globalVariables.h>
 
 
+extern SoftwareSerial pmsSensor2; // PMS Sensor 2
 void powerPMS(bool state) {
     pinMode(PMS_POWER_SWITCH_PIN, OUTPUT);
     digitalWrite(PMS_POWER_SWITCH_PIN, state);
@@ -66,7 +68,7 @@ int pmSensorHealthCheck(String sensor){
       return 4;
     }
   } else if (sensor == "PMS_SX"){ //PMS SENSOR 2
-    if (readPMSdata(&Serial)){
+    if (readPMSdata(&pmsSensor2)){
       return 0;
     } else {
       return 8;
