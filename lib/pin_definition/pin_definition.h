@@ -15,9 +15,9 @@
 
 //pms related pins
 #define PMS_POWER_SWITCH_PIN    A2 
-#define PMS_RX3_PIN             15
+#define PMS_RX3_PIN             15 //SENSOR 1
 #define PMS_TX3_PIN             14
-#define PMS_SSRX_PIN            13
+#define PMS_SSRX_PIN            13 //SENSOR 2
 #define PMS_SSTX_PIN            12
 
 //dht and sht related pins
@@ -25,6 +25,7 @@
 #define DHT_DATA_PIN                A3 
 #define SHT_SDA_PIN                 20
 #define SHT_SCL_PIN                 21
+#define DHT_TYPE                    DHT11 
 
 //sd card related pins
 #define SD_POWER_SWITCH_PIN     30

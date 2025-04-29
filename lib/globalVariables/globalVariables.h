@@ -2,17 +2,24 @@
 #define GLOBALVARIABLES_H
 
 // Define the modem type before including the TinyGSM library
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 
-#include <SD.h>
+// Standard libraries first
 #include <Arduino.h>
+#include <SD.h>
+#include <EEPROM.h>
+#include <SPI.h>
+
+// Third-party libraries
+#include <SHT2x.h>
 #include <TinyGsm.h>
+#include <TinyGPSPlus.h>
 #include <ArduinoJson.h>
-#include <eeprom_config.h>
 #include <TinyGsmClient.h>
-#include <pin_definition.h>
 #include <ArduinoHttpClient.h>
-#include <gsm_communication.h>
+
+// Project-specific includes
+#include <pin_definition.h>
 
 
 // variables for control
@@ -32,9 +39,14 @@
 // extern String firmwareCRC32;
 // // extern int deviceID;
 
+// sht sht25 obect and gps object
+extern SHT2x sht25;
+extern TinyGPSPlus gps;
+
 extern String created_at;
 extern int8_t delta_t;
 extern bool fileDownloadState;
+extern int fileState;
 extern String responseData;
 extern const uint32_t WRITTEN_SIGNATURE;
 extern const int SIGNATURE_ADDRESS;

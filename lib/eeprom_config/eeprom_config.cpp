@@ -1,8 +1,10 @@
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 #include "eeprom_config.h"
 
+#include <SHT2x.h>
 #include <EEPROM.h>
 #include <Arduino.h>
+#include <TinyGPSPlus.h>
 #include <ArduinoJson.h>
 #include <TinyGsmClient.h>
 #include <pin_definition.h>
@@ -10,6 +12,7 @@
 #include <ArduinoHttpClient.h>
 
 // EEPROM_CONFIGURATION_STRUCT eeprom_configuration_struct;
+
 
 void saveConfigurationToEEPROM() {
   // Write a signature first
@@ -177,6 +180,15 @@ void clearEEPROM() {
     EEPROM.write(i, 0xFF); // Write 0xFF to each byte
   }
     Serial.println("EEPROM cleared.");
+}
+
+bool isEEPROMEmpty() {
+  for (int i = 0; i < EEPROM.length(); i++) {
+    if (EEPROM.read(i) != 0xFF) {
+      return false; // EEPROM is not empty
+    }
+  }
+  return true; // EEPROM is empty
 }
 
 // void load_configuration_from_eeprom(){

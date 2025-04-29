@@ -1,14 +1,16 @@
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 #include "sd_card.h"
 
 #include <SD.h>
 #include <SPI.h>
+#include <SHT2x.h>
 #include <CRC32.h>
 #include <EEPROM.h>
 #include <TinyGsm.h>
 #include <Arduino.h>
 #include <Arduino.h>
 #include <avr/wdt.h>
+#include <TinyGPSPlus.h>
 #include <ArduinoJson.h>
 #include <eeprom_config.h>
 #include <TinyGsmClient.h>
@@ -26,7 +28,7 @@ void powerSD(bool state) {
   delay(1000);
 }
 
-int16_t sdHealthCheck(){
+int sdHealthCheck(){
   SPI.begin();
   if (!SD.begin(SD_CS_PIN)){
     Serial.println("SD card init failed!");

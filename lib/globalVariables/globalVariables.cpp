@@ -2,9 +2,11 @@
 #include "globalVariables.h"
 
 #include <SD.h>
+#include <SHT2x.h>
 #include <Arduino.h>
 #include <TinyGsm.h>
 #include <ArduinoJson.h>
+#include <TinyGPSPlus.h>
 #include <eeprom_config.h>
 #include <TinyGsmClient.h>
 #include <pin_definition.h>
@@ -28,9 +30,14 @@
 // String firmwareCRC32 = "103848AF";
 // // int deviceID = 0;
 
+// sht sht25 obect and gps object
+SHT2x sht25;
+TinyGPSPlus gps;
+
 String created_at;
 int8_t delta_t;
 bool fileDownloadState = false;
+int fileState = 1;
 String responseData = "null";
 const uint32_t WRITTEN_SIGNATURE = 0xBEEFDEED;
 const int SIGNATURE_ADDRESS = 0;

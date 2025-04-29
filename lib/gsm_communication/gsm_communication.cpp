@@ -1,9 +1,11 @@
-#define TINY_GSM_MODEM_SIM800
+// #define TINY_GSM_MODEM_SIM800
 #include "gsm_communication.h"
 
 #include <SD.h>
+#include <SHT2x.h>
 #include <Arduino.h>
 #include <sd_card.h>
+#include <TinyGPSPlus.h>
 #include <ArduinoJson.h>
 #include <eeprom_config.h>
 #include <TinyGsmClient.h>
@@ -33,7 +35,7 @@ void checkNetwork() {
     delay(1000);
 }
 
-int8_t gsmHealthCheck() {
+int gsmHealthCheck() {
     Serial1.println("AT");
     delay(1000);
     String response = "";
@@ -44,9 +46,9 @@ int8_t gsmHealthCheck() {
         }
     }
     if (response.length() > 0) {
-        return 1;
+        return 0; // GSM module is responding
     } else {
-        return 0;
+        return 1; // GSM module is not responding
     }
 }
 
@@ -488,17 +490,17 @@ int8_t resumeFirmwareDownload(String resource) {
 void firmwareUpdate(String fileName, String resource) {
   firmwareDelete(fileName);
   
-  int8_t downloadState = firmwareDownload(resource);
-  // int8_t downloadState = 1;
+  fileState = firmwareDownload(resource);
+  // int8_t fileState = 1;
 
   // Only retry if download was interrupted but is resumable
-  while (downloadState == 1) {
+  while (fileState == 1) {
     Serial.println("Retrying firmware download...");
     delay(1000); 
-    downloadState = resumeFirmwareDownload(resource);
+    fileState = resumeFirmwareDownload(resource);
   }
   
-  if (downloadState == -1) {
+  if (fileState == -1) {
     Serial.println("Firmware download failed");
     return;
   }
