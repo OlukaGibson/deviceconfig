@@ -490,30 +490,42 @@ int8_t resumeFirmwareDownload(String resource) {
 }
 
 void firmwareUpdate(String fileName, String resource) {
-  firmwareDelete(fileName);
-  
-  fileState = firmwareDownload(resource);
-  // int8_t fileState = 1;
-
-  // Only retry if download was interrupted but is resumable
-  while (fileState == 1) {
-    Serial.println("Retrying firmware download...");
-    delay(1000); 
-    fileState = resumeFirmwareDownload(resource);
-  }
-  
-  if (fileState == -1) {
-    Serial.println("Firmware download failed");
-    return;
-  }
-  
-  // Verify file exists before announcing completion
-  if (SD.exists(fileName)) {
-    Serial.println("Firmware download completed successfully!");
-    
-    //verify and flash the firmware
-    verifyFirmware(fileName, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
-  } else {
-    Serial.println("Firmware file not found after download attempt");
-  }
+  // if (fileDownloadState){
+    Serial.println("Resource: " + resource);
+    if(fileState == -1){
+      Serial.println("Aborting firmware update.");
+      firmwareDelete(fileName);
+      fileState = 0;
+      return;
+    }else if(fileState == 0){
+      firmwareDelete(fileName);
+      fileState = firmwareDownload(resource);
+    }else if(fileState == 1){
+      pass;
+    }else{
+      Serial.println("fileState: " + String(fileState) + "Aborting firmware update.");
+      firmwareDelete(fileName);
+      fileState = 0;
+      return;
+    }
+    for(int i = 0; i < 5; i++){
+      if(fileState == 1){
+        Serial.println("Retrying firmware download...");
+        delay(1000); 
+        fileState = resumeFirmwareDownload(resource);
+      } else {
+        break;
+      }
+    }
+    if(fileState == 0){
+      if (SD.exists(fileName)) {
+        verifyFirmware(fileName, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
+      } else {
+        Serial.println("Firmware file not found after download attempt");
+      }
+    }else{
+      Serial.println("Firmware download failed");
+      return;
+    }
+  // }
 }

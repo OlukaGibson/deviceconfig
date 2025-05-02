@@ -73,23 +73,23 @@ typedef struct
 extern EEPROM_CONFIGURATION_STRUCT eeprom_configuration_struct;
 
 
-extern float pms1_2_5;
-extern float pms1_10;
-extern float pms2_2_5;
-extern float pms2_10;
-extern float latitude;
-extern float longitude;
-extern float battery_voltage;
-extern String extra_data;
-extern float discharge_rate;
-extern float soc;
-extern float battery_voltage1;
-extern float external_pressure;
-extern float altitude;
-extern float external_temperature;
-extern float external_humidity;
-extern float internal_temperature;
-extern float internal_humidity;
+// extern float pms1_2_5;
+// extern float pms1_10;
+// extern float pms2_2_5;
+// extern float pms2_10;
+// extern float latitude;
+// extern float longitude;
+// extern float battery_voltage;
+// extern String extra_data;
+// extern float discharge_rate;
+// extern float soc;
+// extern float battery_voltage1;
+// extern float external_pressure;
+// extern float altitude;
+// extern float external_temperature;
+// extern float external_humidity;
+// extern float internal_temperature;
+// extern float internal_humidity;
 extern uint16_t status;
 struct pms5003data {
   uint16_t framelen;
