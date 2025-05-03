@@ -51,7 +51,7 @@ bool readPMSdata(Stream *s){
   memcpy((void *)&pmdata, (void *)buffer_u16, 30);
 
   if (sum != pmdata.checksum) {
-    Serial.println("Checksum failure");
+    Serial.println(F("Checksum failure"));
     return false;
   }
 
@@ -74,7 +74,7 @@ int pmSensorHealthCheck(String sensor){
       return 8;
     }
   } else {
-    Serial.println("Invalid sensor type.");
+    Serial.println(F("Invalid sensor type."));
     return -1; // Invalid sensor type
   }  
 }

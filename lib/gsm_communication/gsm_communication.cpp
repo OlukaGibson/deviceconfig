@@ -18,7 +18,7 @@
 
 void disconnectGPRS(){
   modem.gprsDisconnect();
-  Serial.println("Disconnected from GPRS.");
+  Serial.println(F("Disconnected from GPRS."));
 }
 
 void powerGSM(bool state) {
@@ -67,7 +67,7 @@ String getGSMData(){
   if (response.length() > 0) {
     response.trim();
   } else {
-    Serial.println("Failed to get IMSI.");
+    Serial.println(F("Failed to get IMSI."));
   }
   return response;
 }
@@ -97,7 +97,7 @@ String getSignalQuality() {
 }
 
 void postData(String url) {
-    Serial.print("Requesting URL: ");
+    Serial.print(F("Requesting URL: "));
     Serial.println(url);
 
     http.get(url);
@@ -105,17 +105,17 @@ void postData(String url) {
     int statusCode = http.responseStatusCode();
     responseData = http.responseBody();
 
-    Serial.print("Response Code: ");
+    Serial.print(F("Response Code: "));
     Serial.println(statusCode);
-    Serial.print("Response Body: ");
+    Serial.print(F("Response Body: "));
     Serial.println(responseData);
 
     if (statusCode == 200) {
-        Serial.println("Data sent successfully!");
+        Serial.println(F("Data sent successfully!"));
         // return response;
         // updateEEPROMFromResponse(response); // Update EEPROM with response data
     } else {
-        Serial.println("Failed to send data.");
+        Serial.println(F("Failed to send data."));
         // return "null";
     }
 
@@ -201,31 +201,30 @@ void postDeviceData(String field1, String field2, String field3, String field4, 
 }
 
 void connectGPRS() {
-  Serial.println("Initializing modem...");
+  Serial.println(F("Initializing modem..."));
   if (!modem.restart()) {
-      Serial.println("Failed to restart modem!");
+      Serial.println(F("Failed to restart modem!"));
       return;
   } 
-  Serial.println("Waiting for network...");
+  Serial.println(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
-      Serial.println("Network connection failed!");
+      Serial.println(F("Network connection failed!"));
       return;
   }
-  Serial.println("Connected to network!");
+  Serial.println(F("Connected to network!"));
   
-  Serial.println("Connecting to GPRS...");
+  Serial.println(F("Connecting to GPRS..."));
   if (!modem.gprsConnect(apn, user, pass)) {
-      Serial.println("Failed to connect to GPRS!");
+      Serial.println(F("Failed to connect to GPRS!"));
       return;
   }
-  Serial.println("GPRS connected!");
+  Serial.println(F("GPRS connected!"));
 
   client.setTimeout(30000); // 30 seconds timeout
 }
 
 int8_t firmwareDownload(String resource) {
-  Serial.println("Starting firmware download...");
-  Serial.println("Sending GET request...");
+  Serial.println(F("Starting firmware download..."));
   http.beginRequest();
   http.get(resource);
   http.sendHeader("Accept", "application/octet-stream");
@@ -233,30 +232,38 @@ int8_t firmwareDownload(String resource) {
 
   // Check response status
   int statusCode = http.responseStatusCode();
-  Serial.print("Status code: ");
+  Serial.print(F("Status code: "));
   Serial.println(statusCode);
 
   if (statusCode != 200 && statusCode != 206) {
-    Serial.print("Failed to get file. Status code: ");
+    Serial.print(F("Failed to get file. Status code: "));
     Serial.println(statusCode);
     return -1;  // Return error code
   }
 
   // Get content length
   uint32_t length = http.contentLength();
-  Serial.print("Content-Length: ");
+  Serial.print(F("Content-Length: "));
   Serial.println(length);
   
   // Use expected size if content length is invalid
   if (length <= 0) {
-    Serial.println("Invalid content length. Using expected size instead.");
+    Serial.println(F("Invalid content length. Using expected size instead."));
     length = EXPECTED_SIZE;
+  }
+
+  // Allocate buffer only when needed
+  byte* buff = (byte*)malloc(chunkSize);
+  if (!buff) {
+    Serial.println(F("Failed to allocate memory for download buffer"));
+    return -1;
   }
 
   // Prepare file for writing
   File file = SD.open(FIRMWARE_NAME, FILE_WRITE);
   if (!file) {
-    Serial.println("Failed to open file on SD card.");
+    Serial.println(F("Failed to open file on SD card."));
+    free(buff);  // Free the buffer before returning
     return -1;
   }
 
@@ -281,53 +288,48 @@ int8_t firmwareDownload(String resource) {
       if (bytesRead > 0) {
         size_t bytesWritten = file.write(buff, bytesRead);
         if (bytesWritten != (size_t)bytesRead) {
-          Serial.println("Write error!");
+          Serial.println(F("Write error!"));
           break;
         }
         downloaded += bytesRead;
         
-        // Print progress indicators
-        if (downloaded % 4096 == 0) { // Every 4KB
-          Serial.print(".");
+        // Progress indicators remain the same
+        if (downloaded % 4096 == 0) {
+          Serial.print(F("."));
         }
         
-        // Print progress percentage
-        if (millis() - lastProgressTime > 5000) {  // Every 5 seconds
+        if (millis() - lastProgressTime > 5000) {
           Serial.println();
-          Serial.print("Downloaded: ");
+          Serial.print(F("Downloaded: "));
           Serial.print(downloaded / 1024);
-          Serial.print("KB (");
+          Serial.print(F("KB ("));
           if (length > 0) {
             Serial.print((downloaded * 100) / length);
-            Serial.print("%");
+            Serial.print(F("%"));
           }
-          Serial.println(")");
+          Serial.println(F(")"));
           lastProgressTime = millis();
         }
       }
     } 
     else {
-      // Check if we're done or disconnected
       if (!http.connected()) {
         if (receivingData) {
-          Serial.println("\nServer disconnected. Download may be complete.");
+          Serial.println(F("\nServer disconnected. Download may be complete."));
           break;
         }
       }
       
-      // Check for data timeout (10 seconds without data)
       if (receivingData && (millis() - lastDataTime > 20000)) {
-        Serial.println("\nData reception timeout.");
+        Serial.println(F("\nData reception timeout."));
         break;
       }
       
-      // Small delay when no data is available
       delay(100);
     }
     
-    // Safety timeout - abort if downloading takes too long (5 minutes)
     if (millis() - downloadStartTime > 300000) {
-      Serial.println("\nDownload timeout - maximum time exceeded!");
+      Serial.println(F("\nDownload timeout - maximum time exceeded!"));
       break;
     }
   }
@@ -340,25 +342,25 @@ int8_t firmwareDownload(String resource) {
     unsigned long fileSize = readFile.size();
     readFile.close();
     
-    Serial.print("\nDownload completed. Total bytes: ");
+    Serial.print(F("\nDownload completed. Total bytes: "));
     Serial.println(downloaded);
-    Serial.print("Saved file size: ");
+    Serial.print(F("Saved file size: "));
     Serial.println(fileSize);
 
-    // Disconnect from network
-    // modem.gprsDisconnect();
-    // Serial.println("GPRS disconnected");
+    // Free the buffer before verification
+    free(buff);
 
     // Verify file size
     if (fileSize < EXPECTED_SIZE) {
-      Serial.println("WARNING: File appears incomplete!");
+      Serial.println(F("WARNING: File appears incomplete!"));
       return 1;
     } else {
-      Serial.println("File download appears successful.");
+      Serial.println(F("File download appears successful."));
       return 0;
     }
   } else {
-    Serial.println("Error opening file for verification.");
+    Serial.println(F("Error opening file for verification."));
+    free(buff);  // Don't forget to free the buffer on this path too
     return -1;
   }
 }
@@ -367,18 +369,26 @@ int8_t resumeFirmwareDownload(String resource) {
   // Check already downloaded size
   File file = SD.open(FIRMWARE_NAME, FILE_WRITE);
   if (!file) {
-    Serial.println("Failed to open file for resuming.");
+    Serial.println(F("Failed to open file for resuming."));
     return -1;
   }
 
   uint32_t alreadyDownloaded = file.size();
-  Serial.print("Resuming from byte: ");
+  Serial.print(F("Resuming from byte: "));
   Serial.println(alreadyDownloaded);
+
+  // Allocate buffer only when needed
+  byte* buff = (byte*)malloc(chunkSize);
+  if (!buff) {
+    Serial.println(F("Failed to allocate memory for download buffer"));
+    file.close();
+    return -1;
+  }
 
   // Setup HTTP with Range header
   http.beginRequest();
   http.sendHeader("Range", "bytes=" + String(alreadyDownloaded) + "-");
-  Serial.print("Range: bytes=");
+  Serial.print(F("Range: bytes="));
   Serial.print(alreadyDownloaded);
   Serial.println("-");
   http.get(resource);
@@ -386,19 +396,21 @@ int8_t resumeFirmwareDownload(String resource) {
   http.endRequest();
 
   int statusCode = http.responseStatusCode();
-  Serial.print("Status code: ");
+  Serial.print(F("Status code: "));
   Serial.println(statusCode);
 
   if (statusCode != 206 && statusCode != 200) {
-    Serial.println("Server did not support partial content or failed.");
+    Serial.println(F("Server did not support partial content or failed."));
     file.close();
+    free(buff);
     return 1; // retry later
   }
 
   uint32_t contentLength = http.contentLength();
   if (contentLength <= 0) {
-    Serial.println("Invalid or missing content length.");
+    Serial.println(F("Invalid or missing content length."));
     file.close();
+    free(buff);
     return 1;
   }
 
@@ -419,11 +431,11 @@ int8_t resumeFirmwareDownload(String resource) {
       if (bytesRead > 0) {
         size_t written = file.write(buff, bytesRead);
         if (written != (size_t)bytesRead) {
-          Serial.println("Write error during resume.");
+          Serial.println(F("Write error during resume."));
           file.close();
+          free(buff);
           return -1;
         }
-
         totalDownloaded += bytesRead;
 
         if (totalDownloaded % 4096 == 0) {
@@ -432,21 +444,21 @@ int8_t resumeFirmwareDownload(String resource) {
 
         if (millis() - lastProgressTime > 5000) {
           Serial.println();
-          Serial.print("Downloaded: ");
+          Serial.print(F("Downloaded: "));
           Serial.print(totalDownloaded / 1024);
-          Serial.print("KB");
+          Serial.print(F("KB"));
           Serial.println();
           lastProgressTime = millis();
         }
       }
     } else {
       if (!http.connected()) {
-        Serial.println("\nDisconnected from server.");
+        Serial.println(F("\nDisconnected from server."));
         break;
       }
 
       if (receivingData && (millis() - lastDataTime > 20000)) {
-        Serial.println("\nTimeout: No data for 20 seconds.");
+        Serial.println(F("\nTimeout: No data for 20 seconds."));
         break;
       }
 
@@ -454,63 +466,65 @@ int8_t resumeFirmwareDownload(String resource) {
     }
 
     if (millis() - downloadStartTime > 300000) {
-      Serial.println("\nDownload timeout (5 minutes).");
+      Serial.println(F("\nDownload timeout (5 minutes)."));
       break;
     }
   }
 
   file.close();
+  
+  // Don't forget to free the buffer before returning
+  free(buff);
 
   File finalFile = SD.open(FIRMWARE_NAME);
   if (!finalFile) {
-    Serial.println("Failed to reopen file for verification.");
+    Serial.println(F("Failed to reopen file for verification."));
     return -1;
   }
 
   uint32_t finalSize = finalFile.size();
   finalFile.close();
 
-  Serial.print("Final file size: ");
+  Serial.print(F("Final file size: "));
   Serial.println(finalSize);
-  Serial.print("EXPECTED_SIZE: ");
+  Serial.print(F("EXPECTED_SIZE: "));
   Serial.println(EXPECTED_SIZE);
 
   if (finalSize < EXPECTED_SIZE) {
-    Serial.println("Download not complete. Can resume later.");
+    Serial.println(F("Download not complete. Can resume later."));
     return 1;
   } else if (finalSize == EXPECTED_SIZE) {
-    Serial.println("Firmware download complete!");
-    // modem.gprsDisconnect();
+    Serial.println(F("Firmware download complete!"));
     disconnectGPRS();
     return 0;
-  }else {
-    Serial.println("File size mismatch. Possible error during download.");
+  } else {
+    Serial.println(F("File size mismatch. Possible error during download."));
     return -1;
   }
 }
 
-void firmwareUpdate(String fileName, String resource) {
+void firmwareUpdate(String resource) {
   // if (fileDownloadState){
     Serial.println("Resource: " + resource);
     if(fileState == -1){
-      Serial.println("Aborting firmware update.");
-      firmwareDelete(fileName);
+      Serial.println(F("Aborting firmware update."));
+      firmwareDelete();
       fileState = 0;
       return;
     }else if(fileState == 0){
-      firmwareDelete(fileName);
+      firmwareDelete();
       fileState = firmwareDownload(resource);
     }else if(fileState == 1){
       pass;
     }else{
       Serial.println("fileState: " + String(fileState) + "Aborting firmware update.");
-      firmwareDelete(fileName);
+      firmwareDelete();
       fileState = 0;
       return;
     }
     for(int i = 0; i < 5; i++){
       if(fileState == 1){
-        Serial.println("Retrying firmware download...");
+        Serial.println(F("Retrying firmware download..."));
         delay(1000); 
         fileState = resumeFirmwareDownload(resource);
       } else {
@@ -518,13 +532,13 @@ void firmwareUpdate(String fileName, String resource) {
       }
     }
     if(fileState == 0){
-      if (SD.exists(fileName)) {
-        verifyFirmware(fileName, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
+      if (SD.exists(FIRMWARE_NAME)) {
+        verifyFirmware(FIRMWARE_NAME, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
       } else {
-        Serial.println("Firmware file not found after download attempt");
+        Serial.println(F("Firmware file not found after download attempt"));
       }
     }else{
-      Serial.println("Firmware download failed");
+      Serial.println(F("Firmware download failed"));
       return;
     }
   // }

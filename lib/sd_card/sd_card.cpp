@@ -39,29 +39,29 @@ int sdHealthCheck(){
   }
 }
 
-void firmwareDelete(String fileName) {
-  if (SD.exists(fileName)) {
-    if (SD.remove(fileName)) {
-      Serial.println("File deleted successfully.");
+void firmwareDelete() {
+  if (SD.exists(FIRMWARE_NAME)) {
+    if (SD.remove(FIRMWARE_NAME)) {
+      Serial.println(F("File deleted successfully."));
     } else {
-      Serial.println("Failed to delete file.");
+      Serial.println(F("Failed to delete file."));
     }
   } else {
-    Serial.println("File does not exist. No action taken.");
+    Serial.println(F("File does not exist. No action taken."));
   }
   delay(1000);
 }
 
 void firmwareFlash(){
-  Serial.println("Initiating firmware flash from SD card");
+  Serial.println(F("Initiating firmware flash from SD card"));
   
   // Check if firmware file exists first
   if (!SD.exists(FIRMWARE_NAME)) {
-    Serial.println("Firmware file not found! Aborting flash.");
+    Serial.println(F("Firmware file not found! Aborting flash."));
     return;
   }
   
-  Serial.println("Setting EEPROM flag and triggering watchdog reset");
+  Serial.println(F("Setting EEPROM flag and triggering watchdog reset"));
   
   // Set the EEPROM flag to 0xF0 at address 0x1FF
   // This will be read by the bootloader to begin flashing from SD
@@ -75,7 +75,7 @@ void firmwareFlash(){
   delay(600);
   
   // Code should never reach here due to watchdog reset
-  Serial.println("Error: Watchdog reset failed");
+  Serial.println(F("Error: Watchdog reset failed"));
   return;
 }
 
@@ -83,7 +83,7 @@ void firmwareFlash(){
 void verifyFirmware(String fileName, String firmwareCRC32){
   File file = SD.open(fileName);
   if (!file) {
-    Serial.println("Failed to open file!");
+    Serial.println(F("Failed to open file!"));
     return;
   }
 
@@ -105,13 +105,13 @@ void verifyFirmware(String fileName, String firmwareCRC32){
   // Get the final CRC value
   uint32_t checksum = crc.finalize();
 
-  Serial.print("CRC32: ");
+  Serial.print(F("CRC32: "));
   Serial.println(checksum, HEX);
   if (checksum == strtoul(firmwareCRC32.c_str(), NULL, 16)) {
-    Serial.println("Firmware CRC32 verification successful!");
+    Serial.println(F("CRC32 successful!"));
     firmwareFlash();
   } else {
-    Serial.println("Firmware CRC32 verification failed!");
+    Serial.println(F("CRC32 failed!"));
     return;
   }
 }

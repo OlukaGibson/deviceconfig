@@ -53,22 +53,22 @@ extern const int SIGNATURE_ADDRESS;
 
 typedef struct
 {
-    char DEVICE_NAME[32];
-    char DEVICE_WRITE_API_KEY[32];
-    char DEVICE_READ_API_KEY[32];
-    char DEVICE_CHANEL_ID[32];
-    char DEVICE_FIRMWARE_VERSION[32];
-    char DEVICE_FIRMWARE_CRC32[32];
-    int DEVICE_SAMPLE_INTERVAL_MINUTES;
-    int DEVICE_UPLOAD_INTERVAL_MINUTES;
-    int DEPLOYMENT_MODE;
-    int BATTERY_MONITORING;
-    int DEBUG_ENABLE;
-    int PM_SAMPLE_ENTRIES;
-    int SPV;
-    int SD_CARD_PIN;
-    int TRANSMISSION_MODE;
-    int SAMPLE_ENTRIES;
+    char DEVICE_NAME[16];
+    char DEVICE_WRITE_API_KEY[20];
+    char DEVICE_READ_API_KEY[20];
+    char DEVICE_CHANEL_ID[16];
+    char DEVICE_FIRMWARE_VERSION[10];
+    char DEVICE_FIRMWARE_CRC32[16];
+    uint16_t DEVICE_SAMPLE_INTERVAL_MINUTES;
+    uint16_t DEVICE_UPLOAD_INTERVAL_MINUTES;
+    uint16_t DEPLOYMENT_MODE;
+    uint16_t BATTERY_MONITORING;
+    uint16_t DEBUG_ENABLE;
+    uint16_t PM_SAMPLE_ENTRIES;
+    uint16_t SPV;
+    uint16_t SD_CARD_PIN;
+    uint16_t TRANSMISSION_MODE;
+    uint16_t SAMPLE_ENTRIES;
 } EEPROM_CONFIGURATION_STRUCT;
 extern EEPROM_CONFIGURATION_STRUCT eeprom_configuration_struct;
 
@@ -115,7 +115,7 @@ extern HttpClient http;
 extern const char FIRMWARE_NAME[];
 extern const unsigned long EXPECTED_SIZE;
 extern const size_t chunkSize;
-extern byte buff[];
+// extern byte buff[];
 extern unsigned long downloaded;
 extern unsigned long lastProgressTime;
 extern unsigned long downloadStartTime;

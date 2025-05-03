@@ -80,7 +80,7 @@ HttpClient http(client, serverurl1, 80);
 const char FIRMWARE_NAME[] = "/firmware.bin";
 const unsigned long EXPECTED_SIZE = 128406;
 const size_t chunkSize = 1024; // 1KB chunks
-byte buff[chunkSize];
+// byte buff[chunkSize];
 unsigned long downloaded = 0;
 unsigned long lastProgressTime = millis();
 unsigned long downloadStartTime = millis();

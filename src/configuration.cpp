@@ -17,15 +17,18 @@ void updateEEPROMConfigData();
 
 void checkEEPROMConfigData(){
     if (isEEPROMEmpty()) {
-        Serial.println("EEPROM is empty. Please configure the device.");
-        
         // get CCID
         powerGSM(1);
         delay(1000);
         checkNetwork();
         delay(1000);
+        String imei = getIMEI();
+        String imsi = getIMSI();
         String ccid = getCCID();
-        Serial.println("CCID: " + ccid);
+        String signalQuality = getSignalQuality();
+        // String ccid = getCCID();
+        Serial.print(F("CCID: "));
+        Serial.println(ccid);
         
         // get configuration data
         connectGPRS();
@@ -37,7 +40,7 @@ void checkEEPROMConfigData(){
 
         // check if data is null
         if (responseData == "null") {
-            Serial.println("Failed to get EEPROM data.");
+            Serial.println(F("Failed to get EEPROM data."));
             return;
         }
         // Serial.println("EEPROM Data: " + responseData);
@@ -53,7 +56,7 @@ void checkEEPROMConfigData(){
 }
 
 void updateEEPROMConfigData() {
-    Serial.println("Checking for configuration updates from server...");
+    Serial.println(F("Checking for configuration updates from server..."));
     
     // Store current configuration values for comparison
     String currentDeviceName = loadDataFromEEPROM("DEVICE_NAME");
@@ -72,7 +75,7 @@ void updateEEPROMConfigData() {
     String currentFirmwareVersion = loadDataFromEEPROM("DEVICE_FIRMWARE_VERSION");
     String currentFirmwareCRC32 = loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32");
     
-    Serial.println("Current configuration loaded from EEPROM");
+    Serial.println(F("Current configuration loaded from EEPROM"));
     
     // Power on GSM and establish connection
     powerGSM(1);
@@ -107,7 +110,7 @@ void updateEEPROMConfigData() {
     
     // Check if data was received successfully
     if (responseData == "null") {
-        Serial.println("Failed to get configuration data from server.");
+        Serial.println(F("Failed to get configuration data from server."));
         return;
     }
     
@@ -116,7 +119,7 @@ void updateEEPROMConfigData() {
     DeserializationError error = deserializeJson(doc, responseData);
     
     if (error) {
-        Serial.print("JSON parsing failed: ");
+        Serial.print(F("JSON parsing failed: "));
         Serial.println(error.c_str());
         return;
     }
@@ -130,7 +133,7 @@ void updateEEPROMConfigData() {
         if (newDeviceID != currentChannelId) {
             strlcpy(eeprom_configuration_struct.DEVICE_CHANEL_ID, newDeviceID.c_str(), sizeof(eeprom_configuration_struct.DEVICE_CHANEL_ID));
             configUpdated = true;
-            Serial.println("Device ID updated");
+            // Serial.println(F("Device ID updated"));
         }
     }
     
@@ -140,7 +143,7 @@ void updateEEPROMConfigData() {
         if (newFirmwareVersion != currentFirmwareVersion) {
             strlcpy(eeprom_configuration_struct.DEVICE_FIRMWARE_VERSION, newFirmwareVersion.c_str(), sizeof(eeprom_configuration_struct.DEVICE_FIRMWARE_VERSION));
             configUpdated = true;
-            Serial.println("Firmware version updated");
+            // Serial.println(F("Firmware version updated"));
         }
     }
     
@@ -149,14 +152,14 @@ void updateEEPROMConfigData() {
         if (newFirmwareCRC32 != currentFirmwareCRC32) {
             strlcpy(eeprom_configuration_struct.DEVICE_FIRMWARE_CRC32, newFirmwareCRC32.c_str(), sizeof(eeprom_configuration_struct.DEVICE_FIRMWARE_CRC32));
             configUpdated = true;
-            Serial.println("Firmware CRC32 updated");
+            // Serial.println(F("Firmware CRC32 updated"));
         }
     }
     
     if (doc.containsKey("fileDownloadState")) {
         fileDownloadState = doc["fileDownloadState"].as<bool>();
-        Serial.print("File download state updated to: ");
-        Serial.println(fileDownloadState ? "true" : "false");
+        // Serial.print(F("File download state updated to: "));
+        // Serial.println(fileDownloadState ? "true" : "false");
     }
     
     // Handle configs object if it exists
@@ -168,7 +171,7 @@ void updateEEPROMConfigData() {
             configs["Sample Interval"].as<String>().toInt() != currentSampleInterval.toInt()) {
             eeprom_configuration_struct.DEVICE_SAMPLE_INTERVAL_MINUTES = configs["Sample Interval"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Sample interval updated");
+            // Serial.println(F("Sample interval updated"));
         }
         
         // Compare upload interval
@@ -176,7 +179,7 @@ void updateEEPROMConfigData() {
             configs["Upload Interval"].as<String>().toInt() != currentUploadInterval.toInt()) {
             eeprom_configuration_struct.DEVICE_UPLOAD_INTERVAL_MINUTES = configs["Upload Interval"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Upload interval updated");
+            // Serial.println(F("Upload interval updated"));
         }
         
         // Compare deployment mode
@@ -184,7 +187,7 @@ void updateEEPROMConfigData() {
             configs["Deployment Mode"].as<String>().toInt() != currentDeploymentMode.toInt()) {
             eeprom_configuration_struct.DEPLOYMENT_MODE = configs["Deployment Mode"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Deployment mode updated");
+            // Serial.println(F("Deployment mode updated"));
         }
         
         // Compare battery monitoring
@@ -192,7 +195,7 @@ void updateEEPROMConfigData() {
             configs["Chip Based battery monitoring"].as<String>().toInt() != currentBatteryMonitoring.toInt()) {
             eeprom_configuration_struct.BATTERY_MONITORING = configs["Chip Based battery monitoring"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Battery monitoring updated");
+            // Serial.println(F("Battery monitoring updated"));
         }
         
         // Compare debug enable
@@ -200,7 +203,7 @@ void updateEEPROMConfigData() {
             configs["Debug Enable"].as<String>().toInt() != currentDebugEnable.toInt()) {
             eeprom_configuration_struct.DEBUG_ENABLE = configs["Debug Enable"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Debug enable updated");
+            // Serial.println(F("Debug enable updated"));
         }
         
         // Compare PM sample entries
@@ -208,7 +211,7 @@ void updateEEPROMConfigData() {
             configs["PM sample entries"].as<String>().toInt() != currentPMSampleEntries.toInt()) {
             eeprom_configuration_struct.PM_SAMPLE_ENTRIES = configs["PM sample entries"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("PM sample entries updated");
+            // Serial.println(F("PM sample entries updated"));
         }
         
         // Compare SPV
@@ -216,7 +219,7 @@ void updateEEPROMConfigData() {
             configs["SPV"].as<String>().toInt() != currentSPV.toInt()) {
             eeprom_configuration_struct.SPV = configs["SPV"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("SPV updated");
+            // Serial.println(F("SPV updated"));
         }
         
         // Compare SD card pin
@@ -224,7 +227,7 @@ void updateEEPROMConfigData() {
             configs["Sd card pin"].as<String>().toInt() != currentSDCardPin.toInt()) {
             eeprom_configuration_struct.SD_CARD_PIN = configs["Sd card pin"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("SD card pin updated");
+            // Serial.println(F("SD card pin updated"));
         }
         
         // Compare transmission mode
@@ -232,15 +235,15 @@ void updateEEPROMConfigData() {
             configs["Transmission Mode"].as<String>().toInt() != currentTransmissionMode.toInt()) {
             eeprom_configuration_struct.TRANSMISSION_MODE = configs["Transmission Mode"].as<String>().toInt();
             configUpdated = true;
-            Serial.println("Transmission mode updated");
+            // Serial.println(F("Transmission mode updated"));
         }
     }
     
     // Save to EEPROM if any values were updated
     if (configUpdated) {
         saveConfigurationToEEPROM();
-        Serial.println("Configuration updated and saved to EEPROM");
+        Serial.println(F("Configuration updated and saved to EEPROM"));
     } else {
-        Serial.println("No configuration changes detected");
+        Serial.println(F("No configuration changes detected"));
     }
 }

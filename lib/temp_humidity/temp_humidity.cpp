@@ -42,7 +42,7 @@ int thSensorHealthCheck(String sensor){
             float h = sht25.getHumidity();
             float t = sht25.getTemperature();
             if (isnan(h) || isnan(t)) {
-                Serial.println("Failed to read from SHT sensor!");
+                // Serial.println(F("Failed to read from SHT sensor!"));
                 return 32; // Error reading SHT sensor
             } else {
                 // Serial.print("Humidity: ");
@@ -76,14 +76,13 @@ THData readTempHumiditySensors() {
     
     if (!isnan(result.dht_humidity) && !isnan(result.dht_temperature)) {
         result.dht_success = true;
-        Serial.println("DHT Reading successful:");
-        Serial.print("DHT Temperature: ");
+        Serial.print(F("DHT Temperature: "));
         Serial.print(result.dht_temperature);
-        Serial.print("°C, DHT Humidity: ");
+        Serial.print(F("°C, DHT Humidity: "));
         Serial.print(result.dht_humidity);
-        Serial.println("%");
+        Serial.println(F("%"));
     } else {
-        Serial.println("Failed to read from DHT sensor!");
+        Serial.println(F("DHT error"));
         result.dht_temperature = 0.0;
         result.dht_humidity = 0.0;
     }
@@ -97,19 +96,19 @@ THData readTempHumiditySensors() {
         
         if (!isnan(result.sht_humidity) && !isnan(result.sht_temperature)) {
             result.sht_success = true;
-            Serial.println("SHT Reading successful:");
-            Serial.print("SHT Temperature: ");
+            // Serial.println(F("SHT Reading successful:"));
+            Serial.print(F("SHT Temperature: "));
             Serial.print(result.sht_temperature);
-            Serial.print("°C, SHT Humidity: ");
+            Serial.print(F("°C, SHT Humidity: "));
             Serial.print(result.sht_humidity);
-            Serial.println("%");
+            Serial.println(F("%"));
         } else {
-            Serial.println("Failed to read values from SHT sensor!");
+            Serial.println(F("SHT error!"));
             result.sht_temperature = 0.0;
             result.sht_humidity = 0.0;
         }
     } else {
-        Serial.println("Failed to initialize SHT sensor!");
+        Serial.println(F("initialize SHT error!"));
         result.sht_temperature = 0.0;
         result.sht_humidity = 0.0;
     }

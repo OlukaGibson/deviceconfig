@@ -29,7 +29,7 @@ extern SoftwareSerial pmsSensor2;
 // field10 --> sht temperature
 // field11 --> sht humidity
 
-float field1, field2, field3, field4, field5, field6, field7, field8, field9, field10, field11;
+// float field1, field2, field3, field4, field5, field6, field7, field8, field9, field10, field11;
 // String field1Str, field2Str, field3Str, field4Str, field5Str, field6Str, field7Str, field8Str, field9Str, field10Str, field11Str;
 // String extra_data = "null";
 
@@ -39,13 +39,10 @@ int statusValue() {
   return possibleValues[randomIndex];
 }
 
-float* collectDeviceData() {
-  static float collectedData[11]; // Array to store and return all fields
-  float field1 = 0, field2 = 0, field3 = 0, field4 = 0;
-  float field5 = 0, field6 = 0, field7 = 0, field8 = 0, field9 = 0, field10 = 0, field11 = 0;
-  
+void collectDeviceData(float* dataBuffer) {
+  // Local variables for calculations - not stored globally
   int pmSampleEntries = 5;
-  Serial.print("PM Sample Entries: ");
+  Serial.print(F("PM Sample Entries: "));
   Serial.println(pmSampleEntries);
 
   // Simulate PM sensor data collection with random values
@@ -68,11 +65,11 @@ float* collectDeviceData() {
   float pms2_2_5_sum = 0, pms2_10_sum = 0;
   int validSamples1 = 0, validSamples2 = 0;
   
-  Serial.println("Collecting PM sensor data (simulated)...");
+  Serial.println(F("Collecting PM sensor data (simulated)..."));
   for (int i = 0; i < pmSampleEntries; i++) {
-    Serial.print("PM Sample #");
+    Serial.print(F("PM Sample #"));
     Serial.print(i + 1);
-    Serial.print("/");
+    Serial.print(F("/"));
     Serial.println(pmSampleEntries);
     
     // Add small variation to each reading
@@ -87,9 +84,9 @@ float* collectDeviceData() {
     pms1_10_sum += pm1_10_reading;
     validSamples1++;
     
-    Serial.print("PM Sensor 1 - PM2.5: ");
+    Serial.print(F("PM Sensor 1 - PM2.5: "));
     Serial.print(pm1_2_5_reading);
-    Serial.print(", PM10: ");
+    Serial.print(F(", PM10: "));
     Serial.println(pm1_10_reading);
     
     // Simulate readings for Sensor 2
@@ -100,94 +97,71 @@ float* collectDeviceData() {
     pms2_10_sum += pm2_10_reading;
     validSamples2++;
     
-    Serial.print("PM Sensor 2 - PM2.5: ");
+    Serial.print(F("PM Sensor 2 - PM2.5: "));
     Serial.print(pm2_2_5_reading);
-    Serial.print(", PM10: ");
+    Serial.print(F(", PM10: "));
     Serial.println(pm2_10_reading);
     
     delay(500); // Simulated delay between samples
   }
 
   // Calculate PM averages
-  field1 = pms1_2_5_sum / validSamples1; // PM Sensor 1 PM2.5
-  field2 = pms1_10_sum / validSamples1;  // PM Sensor 1 PM10
-  field3 = pms2_2_5_sum / validSamples2; // PM Sensor 2 PM2.5
-  field4 = pms2_10_sum / validSamples2;  // PM Sensor 2 PM10
+  dataBuffer[0] = pms1_2_5_sum / validSamples1; // PM Sensor 1 PM2.5
+  dataBuffer[1] = pms1_10_sum / validSamples1;  // PM Sensor 1 PM10
+  dataBuffer[2] = pms2_2_5_sum / validSamples2; // PM Sensor 2 PM2.5
+  dataBuffer[3] = pms2_10_sum / validSamples2;  // PM Sensor 2 PM10
   
   // Simulate GPS data near 0.332082, 32.570481
   // Add very small variation to GPS coordinates
-  field5 = 0.332082 + random(-1000, 1000) / 1000000.0; // Latitude with tiny variation
-  field6 = 32.570481 + random(-1000, 1000) / 1000000.0; // Longitude with tiny variation
+  dataBuffer[4] = 0.332082 + random(-1000, 1000) / 1000000.0; // Latitude with tiny variation
+  dataBuffer[5] = 32.570481 + random(-1000, 1000) / 1000000.0; // Longitude with tiny variation
   
   // Battery voltage between 4.15 and 4.20
-  field7 = 4.15 + random(0, 50) / 1000.0;
+  dataBuffer[6] = 4.15 + random(0, 50) / 1000.0;
   
   // Temperature and humidity sensors (typical room values)
   // DHT sensor (typically external)
-  field8 = 22.0 + random(-300, 300) / 100.0;  // Temperature 19-25°C
-  field9 = 50.0 + random(-1500, 1500) / 100.0; // Humidity 35-65%
+  dataBuffer[7] = 22.0 + random(-300, 300) / 100.0;  // Temperature 19-25°C
+  dataBuffer[8] = 50.0 + random(-1500, 1500) / 100.0; // Humidity 35-65%
   
   // SHT sensor (typically internal)
-  field10 = 23.0 + random(-200, 200) / 100.0; // Temperature 21-25°C
-  field11 = 45.0 + random(-1000, 1000) / 100.0; // Humidity 35-55%
-  
-  // Store in return array
-  collectedData[0] = field1;
-  collectedData[1] = field2;
-  collectedData[2] = field3;
-  collectedData[3] = field4;
-  collectedData[4] = field5;
-  collectedData[5] = field6;
-  collectedData[6] = field7;
-  collectedData[7] = field8;
-  collectedData[8] = field9;
-  collectedData[9] = field10;
-  collectedData[10] = field11;
+  dataBuffer[9] = 23.0 + random(-200, 200) / 100.0; // Temperature 21-25°C
+  dataBuffer[10] = 45.0 + random(-1000, 1000) / 100.0; // Humidity 35-55%
   
   // Print summary of collected data
   Serial.println("\nData Collection Summary:");
-  Serial.print("PM1 2.5 (avg): "); Serial.println(field1);
-  Serial.print("PM1 10 (avg): "); Serial.println(field2);
-  Serial.print("PM2 2.5 (avg): "); Serial.println(field3);
-  Serial.print("PM2 10 (avg): "); Serial.println(field4);
-  Serial.print("Latitude: "); Serial.println(field5, 6);
-  Serial.print("Longitude: "); Serial.println(field6, 6);
-  Serial.print("Battery Voltage: "); Serial.println(field7);
-  Serial.print("DHT Temperature: "); Serial.println(field8);
-  Serial.print("DHT Humidity: "); Serial.println(field9);
-  Serial.print("SHT Temperature: "); Serial.println(field10);
-  Serial.print("SHT Humidity: "); Serial.println(field11);
+  Serial.print(F("PM1 2.5 (avg): ")); Serial.println(dataBuffer[0]);
+  Serial.print(F("PM1 10 (avg): ")); Serial.println(dataBuffer[1]);
+  Serial.print(F("PM2 2.5 (avg): ")); Serial.println(dataBuffer[2]);
+  Serial.print(F("PM2 10 (avg): ")); Serial.println(dataBuffer[3]);
+  Serial.print(F("Latitude: ")); Serial.println(dataBuffer[4], 6);
+  Serial.print(F("Longitude: ")); Serial.println(dataBuffer[5], 6);
+  Serial.print(F("Battery Voltage: ")); Serial.println(dataBuffer[6]);
+  Serial.print(F("DHT Temperature: ")); Serial.println(dataBuffer[7]);
+  Serial.print(F("DHT Humidity: ")); Serial.println(dataBuffer[8]);
+  Serial.print(F("SHT Temperature: ")); Serial.println(dataBuffer[9]);
+  Serial.print(F("SHT Humidity: ")); Serial.println(dataBuffer[10]);
   
   // Check differences between sensors to confirm they meet requirements
-  Serial.print("PM2.5 difference: "); Serial.println(abs(field1 - field3));
-  Serial.print("PM10 difference: "); Serial.println(abs(field2 - field4));
-  
-  return collectedData;
+  Serial.print(F("PM2.5 difference: ")); Serial.println(abs(dataBuffer[0] - dataBuffer[2]));
+  Serial.print(F("PM10 difference: ")); Serial.println(abs(dataBuffer[1] - dataBuffer[3]));
 }
 
-int* collectMetaData() {
-  static int collectedMetaData[4]; 
-  int metadata1 = 0, metadata2 = 0, metadata3 = 0, metadata4 = 0;
+void collectMetaData(int* metaBuffer) {
+  // Directly fill the provided buffer
   
   // Simulate metadata collection with random values
-  metadata1 = statusValue();
-  metadata2 = random(23, 26);
-  metadata3 = random(0, 100);
-  metadata4 = random(0, 2);
-
-  collectedMetaData[0] = metadata1;
-  collectedMetaData[1] = metadata2;
-  collectedMetaData[2] = metadata3;
-  collectedMetaData[3] = metadata4;
+  metaBuffer[0] = statusValue();
+  metaBuffer[1] = random(23, 26);
+  metaBuffer[2] = random(0, 100);
+  metaBuffer[3] = random(0, 2);
 
   // Print summary of collected metadata
-  Serial.println("\nMetadata Collection Summary:");
-  Serial.print("Metadata 1: "); Serial.println(metadata1);
-  Serial.print("Metadata 2: "); Serial.println(metadata2);
-  Serial.print("Metadata 3: "); Serial.println(metadata3);
-  Serial.print("Metadata 4: "); Serial.println(metadata4);
-
-  return collectedMetaData;
+  Serial.println(F("\nMetadata Collection Summary:"));
+  Serial.print(F("Metadata 1: ")); Serial.println(metaBuffer[0]);
+  Serial.print(F("Metadata 2: ")); Serial.println(metaBuffer[1]);
+  Serial.print(F("Metadata 3: ")); Serial.println(metaBuffer[2]);
+  Serial.print(F("Metadata 4: ")); Serial.println(metaBuffer[3]);
 }
 
 // int statusValue(){

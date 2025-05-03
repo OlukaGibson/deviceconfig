@@ -17,7 +17,7 @@
 void powerGPS(bool state){
     pinMode(GPS_POWER_SWITCH_PIN, OUTPUT);
     digitalWrite(GPS_POWER_SWITCH_PIN, state);
-    Serial.println("GPS power state: " + String(state ? "ON" : "OFF"));
+    // Serial.println(F("GPS power state: "));+ String(state ? "ON" : "OFF"));
     delay(1000);
 }
 
@@ -35,7 +35,7 @@ int gpsHealthCheck() {
     
     // Try to get valid GPS data
     bool validData = false;
-    Serial.println("Checking GPS health...");
+    Serial.println(F("Checking GPS health..."));
     
     while (millis() - startTime < timeout) {
         while (Serial2.available() > 0) {
@@ -107,7 +107,7 @@ GPSData getGPSData(unsigned long timeout) {
     // Start time for timeout
     unsigned long startTime = millis();
     
-    Serial.println("Waiting for GPS data...");
+    Serial.println(F("Waiting for GPS data..."));
     
     // Read GPS data until timeout
     while (millis() - startTime < timeout) {
@@ -153,7 +153,7 @@ GPSData getGPSData(unsigned long timeout) {
                     
                     // If we have a valid location, we can stop looking
                     if (data.locationValid) {
-                        Serial.println("Valid GPS location obtained");
+                        Serial.println(F("Valid GPS location obtained"));
                         break;
                     }
                 }
@@ -177,43 +177,43 @@ GPSData getGPSData(unsigned long timeout) {
     
     // Print the results
     if (data.locationValid) {
-        Serial.print("GPS Location: ");
+        Serial.print(F("GPS Location: "));
         Serial.print(data.latitude, 6);
-        Serial.print(", ");
+        Serial.print(F(", "));
         Serial.println(data.longitude, 6);
     } else {
-        Serial.println("Could not get valid GPS location data");
+        Serial.println(F("Could not get valid GPS location data"));
     }
     
     if (data.altitudeValid) {
-        Serial.print("Altitude: ");
+        Serial.print(F("Altitude: "));
         Serial.println(data.altitude);
     }
     
     if (data.speedValid) {
-        Serial.print("Speed (km/h): ");
+        Serial.print(F("Speed (km/h): "));
         Serial.println(data.speed);
     }
     
     if (data.courseValid) {
-        Serial.print("Course (degrees): ");
+        Serial.print(F("Course (degrees): "));
         Serial.println(data.course);
     }
     
     if (data.satellitesValid) {
-        Serial.print("Satellites: ");
+        Serial.print(F("Satellites: "));
         Serial.println(data.satellites);
     }
     
     if (data.hdopValid) {
-        Serial.print("HDOP: ");
+        Serial.print(F("HDOP: "));
         Serial.println(data.hdop);
     }
     
     if (data.dateValid && data.timeValid) {
-        Serial.print("Date/Time: ");
+        Serial.print(F("Date/Time: "));
         Serial.print(data.date);
-        Serial.print(" ");
+        Serial.print(F(" "));
         Serial.println(data.time);
     }
     
