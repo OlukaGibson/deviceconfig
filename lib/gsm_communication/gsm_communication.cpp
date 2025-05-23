@@ -21,18 +21,31 @@ void disconnectGPRS(){
   Serial.println(F("Disconnected from GPRS."));
 }
 
-void powerGSM(bool state) {
-    pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
-    digitalWrite(GSM_POWER_SWITCH_PIN, state);
-    // Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
-    delay(2000);
+void powerGSM(int state) {
+  pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
+  digitalWrite(GSM_POWER_SWITCH_PIN, state ? HIGH : LOW);
+  // Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
+  delay(2000);
 }
 
-void checkNetwork() {
-    Serial1.println("AT+CREG?");
+bool checkNetwork() {
+  Serial.println(F("Waiting for network..."));
+  
+  // Set a timeout for network registration
+  unsigned long startTime = millis();
+  const unsigned long timeout = 60000; // 60 seconds timeout
+  
+  while (millis() - startTime < timeout) {
+    if (modem.isNetworkConnected()) {
+      Serial.println(F("Connected to network!"));
+      return true;
+    }
     delay(1000);
-    Serial1.println("AT+CGATT?");
-    delay(1000);
+    Serial.print(F("."));
+  }
+  
+  Serial.println(F("Network connection failed!"));
+  return false;
 }
 
 int gsmHealthCheck() {
@@ -130,64 +143,75 @@ void getEEPROMData(String ccid) {
 }
 
 void getConfigData(String deviceID) {
-  // String url = "/device/"+deviceID+"/getconfig";
+  String url = "/device/"+deviceID+"/getconfig";
   
-  // Serial.print("Requesting URL: ");
-  // Serial.println(url);
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
 
-  // http.get(url);
+  http.get(url);
 
-  // int statusCode = http.responseStatusCode();
-  // String response = http.responseBody();
+  int statusCode = http.responseStatusCode();
+  String response = http.responseBody();
 
-  // Serial.print("Response Code: ");
-  // Serial.println(statusCode);
-  // Serial.print("Response Body: ");
-  // Serial.println(response);
+  Serial.print("Response Code: ");
+  Serial.println(statusCode);
+  Serial.print("Response Body: ");
+  Serial.println(response);
 
-  // if (statusCode == 200) {
-  //   Serial.println("Config data received successfully!");
+  if (statusCode == 200) {
+    Serial.println("Config data received successfully!");
     
-  //   // Parse the JSON response
-  //   DynamicJsonDocument doc(1024);
-  //   DeserializationError error = deserializeJson(doc, response);
+    // Parse the JSON response
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, response);
     
-  //   if (error) {
-  //     Serial.print("JSON parsing failed: ");
-  //     Serial.println(error.c_str());
-  //   } else {
-  //     // Update global variables with configuration values
-  //     deploymentMode = doc["configs"][" Deployment Mode"] | "null";
-  //     batteryMonitoring = doc["configs"]["Chip Based battery monitoring"] | "null";
-  //     debugEnable = doc["configs"]["Debug Enable"] | "null";
-  //     pmSampleEntries = doc["configs"]["PM sample entries"] | "null";
-  //     spv = doc["configs"]["SPV"] | "null";
-  //     sdCardPin = doc["configs"]["Sd card pin"] | "null";
-  //     transmissionMode = doc["configs"]["Transmission Mode"] | "null";
-  //     firmwareVersion = String(doc["firmwareVersion"] | "null");
-  //     fileDownloadState = doc["fileDownloadState"] | false;
-  //     deviceID = String(doc["deviceID"] | "null");
-  //     firmwareCRC32 = doc["firmwareCRC32"] | "null";
+    if (error) {
+      Serial.print("JSON parsing failed: ");
+      Serial.println(error.c_str());
+    } else {
+      // Update global variables with configuration values
+      String deploymentMode = doc["configs"][" Deployment Mode"] | "0";
+      String batteryMonitoring = doc["configs"]["Chip Based battery monitoring"] | "0";
+      String debugEnable = doc["configs"]["Debug Enable"] | "0";
+      String pmSampleEntries = doc["configs"]["PM sample entries"] | "0";
+      String spv = doc["configs"]["SPV"] | "0";
+      String sdCardPin = doc["configs"]["Sd card pin"] | "0";
+      String transmissionMode = doc["configs"]["Transmission Mode"] | "0";
+      String firmwareVersion = String(doc["firmwareVersion"] | "null");
+      fileDownloadState = doc["fileDownloadState"] | false;
+      // deviceID = String(doc["deviceID"] | "0");
+      String firmwareCRC32 = doc["firmwareCRC32"] | "null";
       
-  //     // Log retrieved values
-  //     Serial.println("Deployment Mode: " + deploymentMode);
-  //     Serial.println("Battery Monitoring: " + batteryMonitoring);
-  //     Serial.println("Debug Enable: " + debugEnable);
-  //     Serial.println("PM Sample Entries: " + pmSampleEntries);
-  //     Serial.println("SPV: " + spv);
-  //     Serial.println("SD Card Pin: " + sdCardPin);
-  //     Serial.println("Transmission Mode: " + transmissionMode);
-  //     Serial.println("Firmware Version: " + firmwareVersion);
-  //     Serial.println("File Download State: " + String(fileDownloadState ? "true" : "false"));
-  //     Serial.println("Device ID: " + deviceID);
-  //     Serial.println("Firmware CRC32: " + firmwareCRC32);
-  //   }
-  // } else {
-  //   Serial.println("Failed to get configuration data.");
-  // }
+      // Log retrieved values
+      Serial.print(F("Deployment Mode: "));
+      Serial.println(deploymentMode);
+      Serial.print(F("Battery Monitoring: "));
+      Serial.println(batteryMonitoring);
+      Serial.print(F("Debug Enable: "));
+      Serial.println(debugEnable);
+      Serial.print(F("PM Sample Entries: "));
+      Serial.println(pmSampleEntries);
+      Serial.print(F("SPV: "));
+      Serial.println(spv);
+      Serial.print(F("SD Card Pin: "));
+      Serial.println(sdCardPin);
+      Serial.print(F("Transmission Mode: "));
+      Serial.println(transmissionMode);
+      Serial.print(F("Firmware Version: "));
+      Serial.println(firmwareVersion);
+      Serial.print(F("File Download State: "));
+      Serial.println(fileDownloadState ? "true" : "false");
+      Serial.print(F("Device ID: "));
+      Serial.println(deviceID);
+      Serial.print(F("Firmware CRC32: "));
+      Serial.println(firmwareCRC32);
+    }
+  } else {
+    Serial.println("Failed to get configuration data.");
+  }
 
-  // // modem.gprsDisconnect();
-  // // Serial.println("Disconnected from GPRS.");
+  // modem.gprsDisconnect();
+  // Serial.println("Disconnected from GPRS.");
 }
 
 void postMetaData(String metadata1, String metadata2, String metadata3, String metadata4) {
@@ -200,27 +224,30 @@ void postDeviceData(String field1, String field2, String field3, String field4, 
   postData(url);
 }
 
-void connectGPRS() {
+bool connectGPRS() {
   Serial.println(F("Initializing modem..."));
   if (!modem.restart()) {
       Serial.println(F("Failed to restart modem!"));
-      return;
+      return false;
   } 
+  Serial.println(F("Modem initialized successfully."));
+  
   Serial.println(F("Waiting for network..."));
   if (!modem.waitForNetwork()) {
       Serial.println(F("Network connection failed!"));
-      return;
+      return false;
   }
   Serial.println(F("Connected to network!"));
   
   Serial.println(F("Connecting to GPRS..."));
   if (!modem.gprsConnect(apn, user, pass)) {
       Serial.println(F("Failed to connect to GPRS!"));
-      return;
+      return false;
   }
   Serial.println(F("GPRS connected!"));
 
   client.setTimeout(30000); // 30 seconds timeout
+  return true;
 }
 
 int8_t firmwareDownload(String resource) {
@@ -503,43 +530,143 @@ int8_t resumeFirmwareDownload(String resource) {
   }
 }
 
-void firmwareUpdate(String resource) {
-  // if (fileDownloadState){
-    Serial.println("Resource: " + resource);
-    if(fileState == -1){
-      Serial.println(F("Aborting firmware update."));
-      firmwareDelete();
-      fileState = 0;
-      return;
-    }else if(fileState == 0){
-      firmwareDelete();
-      fileState = firmwareDownload(resource);
-    }else if(fileState == 1){
-      pass;
-    }else{
-      Serial.println("fileState: " + String(fileState) + "Aborting firmware update.");
-      firmwareDelete();
-      fileState = 0;
-      return;
-    }
-    for(int i = 0; i < 5; i++){
-      if(fileState == 1){
-        Serial.println(F("Retrying firmware download..."));
-        delay(1000); 
-        fileState = resumeFirmwareDownload(resource);
-      } else {
-        break;
-      }
-    }
-    if(fileState == 0){
-      if (SD.exists(FIRMWARE_NAME)) {
-        verifyFirmware(FIRMWARE_NAME, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"));
-      } else {
-        Serial.println(F("Firmware file not found after download attempt"));
-      }
-    }else{
-      Serial.println(F("Firmware download failed"));
-      return;
-    }
-  // }
+// First, add these missing functions
+void firmwareDelete() {
+  // Delete firmware file if it exists
+  if (SD.exists(FIRMWARE_NAME)) {
+    Serial.println(F("Deleting existing firmware file..."));
+    SD.remove(FIRMWARE_NAME);
+  }
 }
+
+bool verifyFirmware(const char* firmwareFile, String expectedCRC) {
+  File file = SD.open(firmwareFile);
+  if (!file) {
+    Serial.println(F("Failed to open firmware file for verification"));
+    return false;
+  }
+  
+  // Simple size verification for now
+  unsigned long fileSize = file.size();
+  file.close();
+  
+  Serial.print(F("Firmware file size: "));
+  Serial.println(fileSize);
+  
+  if (fileSize == EXPECTED_SIZE) {
+    Serial.println(F("Firmware size verification passed"));
+    // You would add actual CRC checking here
+    return true;
+  } else {
+    Serial.println(F("Firmware size verification failed"));
+    return false;
+  }
+}
+
+void firmwareUpdate(String resource){
+  // Initialize SD card first
+  if (!SD.begin(SD_CS_PIN)) {
+    Serial.println(F("SD card initialization failed!"));
+    return;
+  }
+  Serial.println(F("SD card initialized successfully."));
+
+  firmwareDelete();
+  Serial.println(F("Starting firmware update..."));
+  int8_t fileState = firmwareDownload(resource);
+  // int8_t fileState = 1;
+  while (fileState == 1) {
+    Serial.println(F("Resuming firmware download..."));
+    fileState = resumeFirmwareDownload(resource);
+  }
+  verifyFirmware(FIRMWARE_NAME, "103848AF");
+}
+
+// Now the improved firmwareUpdate function
+// void firmwareUpdate(String resource) {
+//   Serial.println("Resource: " + resource);
+  
+//   // Check current fileState and handle accordingly
+//   if (fileState == -1) {
+//     Serial.println(F("Previous error state. Aborting firmware update."));
+//     firmwareDelete();
+//     fileState = 0;
+//     return;
+//   }
+  
+//   // If fileState is 1 (incomplete download), check if file exists
+//   if (fileState == 1) {
+//     if (SD.exists(FIRMWARE_NAME)) {
+//       Serial.println(F("Incomplete download found. Resuming..."));
+//       // File exists, attempt to resume download
+//     } else {
+//       Serial.println(F("Incomplete download marked but file missing. Starting fresh download."));
+//       fileState = 0; // Reset to start fresh download
+//     }
+//   }
+  
+//   // If fileState is 0 or reset above, start fresh download
+//   if (fileState == 0) {
+//     firmwareDelete(); // Start with a clean slate
+//     fileState = firmwareDownload(resource);
+//   }
+  
+//   // Retry logic - try to resume download up to 5 times if incomplete
+//   int retryCount = 0;
+//   while (fileState == 1 && retryCount < 5) {
+//     Serial.print(F("Retry #"));
+//     Serial.print(retryCount + 1);
+//     Serial.println(F(" resuming firmware download..."));
+//     delay(1000);
+//     fileState = resumeFirmwareDownload(resource);
+//     retryCount++;
+//   }
+  
+//   // Process final state
+//   if (fileState == 0) {
+//     // Success - verify the download
+//     if (SD.exists(FIRMWARE_NAME)) {
+//       File file = SD.open(FIRMWARE_NAME);
+//       if (file) {
+//         unsigned long fileSize = file.size();
+//         file.close();
+        
+//         if (fileSize == EXPECTED_SIZE) {
+//           // File size matches expected, verify CRC
+//           Serial.println(F("File size matches expected. Verifying firmware..."));
+//           if (verifyFirmware(FIRMWARE_NAME, loadDataFromEEPROM("DEVICE_FIRMWARE_CRC32"))) {
+//             Serial.println(F("Firmware verified successfully!"));
+//             // Here you would apply the firmware update
+//           } else {
+//             Serial.println(F("Firmware verification failed."));
+//             fileState = -1;
+//             firmwareDelete();
+//           }
+//         } else if (fileSize > EXPECTED_SIZE) {
+//           // File is larger than expected - error
+//           Serial.println(F("File size exceeds expected size. Possible corruption."));
+//           fileState = -1;
+//           firmwareDelete();
+//         } else {
+//           // File is smaller than expected - still incomplete
+//           Serial.println(F("File size smaller than expected. Download incomplete."));
+//           fileState = 1; // Mark for future resumption
+//         }
+//       }
+//     } else {
+//       Serial.println(F("Firmware file not found after reported successful download."));
+//       fileState = -1;
+//       firmwareDelete();
+//     }
+//   } else if (fileState == 1) {
+//     // Still incomplete after retries
+//     Serial.println(F("Firmware download still incomplete after maximum retries."));
+//     Serial.println(F("Will attempt again on next update cycle."));
+//   } else {
+//     // Error state
+//     Serial.println(F("Firmware download failed with errors."));
+//     fileState = -1;
+//     firmwareDelete();
+//   }
+// }
+

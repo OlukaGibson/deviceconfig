@@ -15,6 +15,41 @@
 void checkEEPROMConfigData();
 void updateEEPROMConfigData();
 
+bool attemptGPRSConnection(int maxRetries = 3) {
+    int retryCount = 0;
+    bool connected = false;
+    
+    while (!connected && retryCount < maxRetries) {
+      retryCount++;
+      Serial.print(F("GPRS connection attempt "));
+      Serial.print(retryCount);
+      Serial.print(F(" of "));
+      Serial.println(maxRetries);
+      
+      // Power cycle modem for each attempt
+      powerGSM(0);
+      delay(3000);
+      powerGSM(1);
+      delay(5000);
+      
+      if (checkNetwork()) {
+        delay(3000);
+        connected = connectGPRS();
+        
+        if (connected) {
+          Serial.println(F("Successfully connected to GPRS"));
+          return true;
+        }
+      }
+      
+      Serial.println(F("Connection attempt failed, retrying..."));
+      delay(5000);
+    }
+    
+    Serial.println(F("Failed to connect after maximum retries"));
+    return false;
+  }
+
 void checkEEPROMConfigData(){
     if (isEEPROMEmpty()) {
         // get CCID
@@ -31,25 +66,27 @@ void checkEEPROMConfigData(){
         Serial.println(ccid);
         
         // get configuration data
-        connectGPRS();
-        delay(100);
-        getEEPROMData(ccid);
-        disconnectGPRS();
+        bool connected = connectGPRS();
+        if (connected) {
+            delay(100);
+            getEEPROMData(ccid);
+            disconnectGPRS();
+        } else {
+            Serial.println(F("Failed to connect to GPRS for configuration."));
+        }
         powerGSM(0);
         delay(2000);
 
-        // check if data is null
-        if (responseData == "null") {
+        
+        if (responseData != "null") {
+            deviceSelfConfig(responseData);
+            String all = loadDataFromEEPROM("ALL");
+            Serial.println(all);
+               
+        } else {
             Serial.println(F("Failed to get EEPROM data."));
             return;
         }
-        // Serial.println("EEPROM Data: " + responseData);
-        
-        // configure device
-        deviceSelfConfig(responseData);
-        String all = loadDataFromEEPROM("ALL");
-        Serial.println(all);
-        // return;
     } else {
         updateEEPROMConfigData();
     }
@@ -97,8 +134,21 @@ void updateEEPROMConfigData() {
     //     powerGSM(0);
     //     return;
     // }
-    connectGPRS();
-    delay(5000);
+    if (attemptGPRSConnection(3)) {
+        Serial.println(F("GPRS connection established."));
+    } else {
+        Serial.println(F("Failed to connect to GPRS after multiple attempts."));
+        powerGSM(0);
+        return;
+    }
+    delay(2000);
+    // bool connected = connectGPRS();
+    // if (!connected) {
+    //     Serial.println(F("GPRS connection failed. Cannot update configuration."));
+    //     powerGSM(0);
+    //     return;
+    // }
+    // delay(2000);
     
     // Get configuration data from server using the device channel ID
     responseData = "null"; // Reset response data
@@ -128,14 +178,14 @@ void updateEEPROMConfigData() {
     bool configUpdated = false;
     
     // Compare device ID (may be a number in the JSON)
-    if (doc.containsKey("deviceID")) {
-        String newDeviceID = String(doc["deviceID"].as<int>());
-        if (newDeviceID != currentChannelId) {
-            strlcpy(eeprom_configuration_struct.DEVICE_CHANEL_ID, newDeviceID.c_str(), sizeof(eeprom_configuration_struct.DEVICE_CHANEL_ID));
-            configUpdated = true;
-            // Serial.println(F("Device ID updated"));
-        }
-    }
+    // if (doc.containsKey("deviceID")) {
+    //     String newDeviceID = String(doc["deviceID"].as<int>());
+    //     if (newDeviceID != currentChannelId) {
+    //         strlcpy(eeprom_configuration_struct.DEVICE_CHANEL_ID, newDeviceID.c_str(), sizeof(eeprom_configuration_struct.DEVICE_CHANEL_ID));
+    //         configUpdated = true;
+    //         // Serial.println(F("Device ID updated"));
+    //     }
+    // }
     
     // Handle the optional firmware-related fields - only update if provided
     if (doc.containsKey("firmwareVersion")) {

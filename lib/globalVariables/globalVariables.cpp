@@ -36,7 +36,7 @@ TinyGPSPlus gps;
 
 String created_at;
 int8_t delta_t;
-bool fileDownloadState = false;
+bool fileDownloadState = true;
 int fileState = 0;
 String responseData = "null";
 const uint32_t WRITTEN_SIGNATURE = 0xBEEFDEED;

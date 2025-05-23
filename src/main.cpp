@@ -18,6 +18,7 @@ void checkEEPROMConfigData();
 void collectDeviceData(float* dataBuffer);
 void collectMetaData(int* metaBuffer);
 int statusValue();
+bool attemptGPRSConnection(int maxRetries);
 
 // Single shared data buffer - only declared once
 float dataBuffer[11];
@@ -40,69 +41,84 @@ void setup(){
   
   Serial2.begin(9600); // For GPS
   delay(1000);
+
+  // clearEEPROM();
 }
 
 void loop(){
-  Serial.println(F("__________________________STARTING configuration__________________________"));
-  checkEEPROMConfigData();
-  Serial.println(F("__________________________configuration DONE__________________________"));
-  delay(30000);
-
-  Serial.println(F("__________________________STARTING device data collection__________________________"));
-  collectDeviceData(dataBuffer); // Use shared buffer instead of allocating new memory
-  
-  powerGSM(1);
-  delay(1000);
-  checkNetwork();
-  delay(3000);
-  connectGPRS();
-  delay(3000);
-  // Pass individual values from buffer instead of creating new strings each time
-  postDeviceData(
-    String(dataBuffer[0]), 
-    String(dataBuffer[1]), 
-    String(dataBuffer[2]), 
-    String(dataBuffer[3]), 
-    String(dataBuffer[4]), 
-    String(dataBuffer[5]), 
-    String(dataBuffer[6]), 
-    String(dataBuffer[7])
-  );
-  Serial.println(F("__________________________Device data collection DONE__________________________"));
-  disconnectGPRS();
-  delay(2000);
-  powerGSM(0);
-  delay(30000);
-  
-  Serial.println(F("__________________________STARTING meta data collection__________________________"));
-  collectMetaData(metaBuffer);
-  postMetaData(
-  String(metaBuffer[0]),
-  String(metaBuffer[1]),
-  String(metaBuffer[2]),
-  String(metaBuffer[3])
-  );
-  Serial.println(F("__________________________Meta data collection DONE__________________________"));
-  disconnectGPRS();
-  delay(2000);
-  powerGSM(0);
-  delay(30000); 
-
-  if (fileDownloadState){
-    Serial.println(F("__________________________STARTING F.O.T.A. update__________________________"));
-    powerGSM(1);
-    delay(1000);
-    checkNetwork();
-    delay(3000);
-    connectGPRS();
-    delay(3000);
-    String resource = "/firmware/" + loadDataFromEEPROM("DEVICE_FIRMWARE_VERSION") + "/download/firmwarebin";
+  // just downloading the firmware from the server
+  if (attemptGPRSConnection(3)) {
+    String resource = "/firmware/42.74/download/firmwarebin";
     Serial.println("Resource: " + resource);
     firmwareUpdate(resource);
-    Serial.println(F("__________________________F.O.T.A. update DONE__________________________"));
-    disconnectGPRS();
-    delay(2000);
-    powerGSM(0);
-    delay(30000);
-    }
+  }
+
+  // Serial.println(F("__________________________STARTING configuration__________________________"));
+  // checkEEPROMConfigData();
+  // Serial.println(F("__________________________configuration DONE__________________________"));
+  // delay(30000);
+
+  // Serial.println(F("__________________________STARTING device data collection__________________________"));
+  // collectDeviceData(dataBuffer);
+  // // powerGSM(1);
+  // // delay(1000);
+  // // checkNetwork();
+  // // delay(3000);
+  // // connectGPRS();
+  // // delay(3000);
+  // // Pass individual values from buffer instead of creating new strings each time
+  // if (attemptGPRSConnection(3)) {
+  //   postDeviceData(
+  //     String(dataBuffer[0]), 
+  //     String(dataBuffer[1]), 
+  //     String(dataBuffer[2]), 
+  //     String(dataBuffer[3]), 
+  //     String(dataBuffer[4]), 
+  //     String(dataBuffer[5]), 
+  //     String(dataBuffer[6]), 
+  //     String(dataBuffer[7])
+  //   );
+  // }
+  // Serial.println(F("__________________________Device data collection DONE__________________________"));
+  // disconnectGPRS();
+  // delay(3000);
+  // powerGSM(0);
+  // delay(30000);
+  
+  // Serial.println(F("__________________________STARTING meta data collection__________________________"));
+  // collectMetaData(metaBuffer);
+  // if (attemptGPRSConnection(3)) {
+  //   postMetaData(
+  //     String(metaBuffer[0]),
+  //     String(metaBuffer[1]),
+  //     String(metaBuffer[2]),
+  //     String(metaBuffer[3])
+  //     );
+  // }
+  // Serial.println(F("__________________________Meta data collection DONE__________________________"));
+  // disconnectGPRS();
+  // delay(2000);
+  // powerGSM(0);
+  // delay(30000); 
+
+  // if (fileDownloadState){
+  //   Serial.println(F("__________________________STARTING F.O.T.A. update__________________________"));
+  //   // powerGSM(1);
+  //   // delay(1000);
+  //   // checkNetwork();
+  //   // delay(3000);
+  //   // connectGPRS();
+  //   // delay(3000);
+  //   String resource = "/firmware/" + loadDataFromEEPROM("DEVICE_FIRMWARE_VERSION") + "/download/firmwarebin";
+  //   Serial.println("Resource: " + resource);
+    
+  //   if (attemptGPRSConnection(3)) {
+  //     firmwareUpdate(resource);
+  //   }
+  //   Serial.println(F("__________________________F.O.T.A. update DONE__________________________"));
+  //   disconnectGPRS();
+  //   delay(2000);
+  //   powerGSM(0);
+  //   delay(30000);
+  //   }
 }

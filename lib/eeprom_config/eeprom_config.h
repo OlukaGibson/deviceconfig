@@ -14,7 +14,7 @@
 #include <ArduinoHttpClient.h>
 
 void saveConfigurationToEEPROM();
-void deviceSelfConfig(String configJson);
+bool deviceSelfConfig(String configJson);
 String loadDataFromEEPROM(String data);
 void clearEEPROM();
 bool isEEPROMEmpty();

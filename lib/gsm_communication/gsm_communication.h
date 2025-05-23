@@ -37,12 +37,12 @@
 String getIMSI();
 String getCCID();
 String getIMEI();
-void connectGPRS();
-void checkNetwork();
+bool connectGPRS();
+bool checkNetwork();
 int gsmHealthCheck();
 void disconnectGPRS();
 String getSignalQuality();
-void powerGSM(bool state);
+void powerGSM(int state);
 void getEEPROMData(String ccid);
 void getConfigData(String deviceID);
 int8_t firmwareDownload(String resource);
