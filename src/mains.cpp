@@ -1,3 +1,277 @@
+#include <SD.h>
+#include <sd_card.h>
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <eeprom_config.h>
+#include <SoftwareSerial.h>
+#include <TinyGsmClient.h>
+#include <pin_definition.h>
+#include <globalVariables.h>
+#include <ArduinoHttpClient.h>
+#include <gsm_communication.h>
+
+// Global variables
+String DevName;
+int channelId;
+char writeAPIKey[32];  // Buffer size for API key
+int DeploymentMode;
+int SDCS;
+int spvalue;
+int DebugEnable;
+int TransMode;
+int chipBasedBatteryOps;
+int pmSamples;
+
+// Function prototypes
+void configureExample1();
+void configureExample2();
+void configureFromJSON(String jsonData);
+void printCurrentConfiguration();
+void writeString(char add, String data);
+String read_String(char add);
+String read_EE(char add);
+void writeBuffer(char add, char* Buffer);
+
+void setup(){
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println(F("__________________________STARTING device__________________________"));
+  Serial1.begin(115200);
+  delay(1000);
+
+//   clearEEPROM();
+//   printCurrentConfiguration();
+
+  delay(3000);
+//   configureExample1();
+    configureExample2();
+}
+
+void loop() {}
+
+void configureExample2() {
+  String jsonConfig = R"({
+    "configs": {
+      "Chip Based battery monitoring": "0",
+      "Debug Enable": "1",
+      "Deployment Mode": "0",
+      "PM sample entries": "5",
+      "SD card pin": "28",
+      "Sleep Percentile Value": "100",
+      "Transmission Mode": "0"
+    },
+    "deviceID": 1,
+    "fileDownloadState": false
+  })";
+  
+  configureFromJSON(jsonConfig);
+}
+
+void configureExample1() {
+  String jsonConfig = R"({
+    "configs": {
+      "Chip Based battery monitoring": "0",
+      "Debug Enable": "1",
+      "Deployment Mode": "0",
+      "PM sample entries": "60",
+      "SD card pin": "28",
+      "Sleep Percentile Value": "500",
+      "Transmission Mode": "0"
+    },
+    "deviceID": 1,
+    "name": "Airqo-G5377",
+    "networkID": "8944501905220513027",
+    "readkey": "UNIMR7IQDZGRYRM6",
+    "writekey": "QPYX979B54OF8CBN"
+  })";
+  
+  configureFromJSON(jsonConfig);
+}
+
+void configureFromJSON(String jsonData) {
+  Serial.println(F("##################### JSON DEVICE CONFIGURATION #######################"));
+  
+  // Parse JSON data (assuming you have a JSON parsing library like ArduinoJson)
+  // If you don't have ArduinoJson, you'll need to add it to your project
+  
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, jsonData);
+  
+  if (error) {
+    Serial.print(F("JSON parsing failed: "));
+    Serial.println(error.c_str());
+    return;
+  }
+  
+  Serial.println(F("Configuring device from JSON data..."));
+  
+  // Extract and set device name
+  if (doc.containsKey("name")) {
+    String deviceName = doc["name"];
+    if (deviceName.length() <= 22) {
+      DevName = deviceName;
+      writeString(1, DevName);
+      Serial.print(F("Device Name set to: "));
+      Serial.println(DevName);
+    } else {
+      Serial.println(F("Warning: Device name too long, skipping"));
+    }
+  }
+  
+  // Extract and set channel ID (from deviceID or networkID)
+  if (doc.containsKey("deviceID")) {
+    channelId = doc["deviceID"];
+    writeString(31, String(channelId));
+    Serial.print(F("Channel ID set to: "));
+    Serial.println(channelId);
+  } else if (doc.containsKey("networkID")) {
+    String networkID = doc["networkID"];
+    channelId = networkID.toInt();
+    writeString(31, String(channelId));
+    Serial.print(F("Channel ID set to: "));
+    Serial.println(channelId);
+  }
+  
+  // Extract and set write API key
+  if (doc.containsKey("writekey")) {
+    String writeKey = doc["writekey"];
+    strcpy(writeAPIKey, writeKey.c_str());
+    writeBuffer(61, writeAPIKey);
+    Serial.print(F("Write API Key set to: "));
+    Serial.println(writeKey);
+  }
+  
+  // Extract and set configurations
+  if (doc.containsKey("configs")) {
+    JsonObject configs = doc["configs"];
+    
+    // Deployment Mode
+    if (configs.containsKey("Deployment Mode")) {
+      DeploymentMode = configs["Deployment Mode"].as<String>().toInt();
+      writeString(100, String(DeploymentMode));
+      Serial.print(F("Deployment Mode set to: "));
+      Serial.println(DeploymentMode);
+    }
+    
+    // SD Card CS Pin
+    if (configs.containsKey("SD card pin")) {
+      SDCS = configs["SD card pin"].as<String>().toInt();
+      writeString(103, String(SDCS));
+      Serial.print(F("SD Card CS Pin set to: "));
+      Serial.println(SDCS);
+    }
+    
+    // Sleep Percentile Value
+    if (configs.containsKey("Sleep Percentile Value")) {
+      spvalue = configs["Sleep Percentile Value"].as<String>().toInt();
+      writeString(110, String(spvalue));
+      Serial.print(F("Sleep Percentile Value set to: "));
+      Serial.println(spvalue);
+    }
+    
+    // Debug Enable
+    if (configs.containsKey("Debug Enable")) {
+      DebugEnable = configs["Debug Enable"].as<String>().toInt();
+      writeString(120, String(DebugEnable));
+      Serial.print(F("Debug Enable set to: "));
+      Serial.println(DebugEnable);
+    }
+    
+    // Transmission Mode
+    if (configs.containsKey("Transmission Mode")) {
+      TransMode = configs["Transmission Mode"].as<String>().toInt();
+      writeString(130, String(TransMode));
+      Serial.print(F("Transmission Mode set to: "));
+      Serial.println(TransMode);
+    }
+    
+    // Chip Based Battery Monitoring
+    if (configs.containsKey("Chip Based battery monitoring")) {
+      chipBasedBatteryOps = configs["Chip Based battery monitoring"].as<String>().toInt();
+      writeString(135, String(chipBasedBatteryOps));
+      Serial.print(F("Chip Based Battery Monitoring set to: "));
+      Serial.println(chipBasedBatteryOps);
+    }
+    
+    // PM Sample Entries
+    if (configs.containsKey("PM sample entries")) {
+      pmSamples = configs["PM sample entries"].as<String>().toInt();
+      writeString(140, String(pmSamples));
+      Serial.print(F("PM Sample Entries set to: "));
+      Serial.println(pmSamples);
+    }
+  }
+  
+  // Set device config mode
+  writeString(145, String(2));
+  
+  Serial.println(F("JSON Configuration Complete!"));
+  printCurrentConfiguration();
+}
+
+void printCurrentConfiguration() {
+  Serial.println(F("Current Configuration:"));
+  Serial.print(F("Device Name: ")); Serial.println(read_String(1));  
+  Serial.print(F("Channel ID: ")); Serial.println(read_EE(31));   
+  Serial.print(F("Write Key: ")); Serial.println(read_String(61)); 
+  Serial.print(F("SDCS PIN no.: ")); Serial.println(read_EE(103)); 
+  Serial.print(F("Deployment Mode: ")); Serial.println(read_EE(100)); 
+  Serial.print(F("Sleep Percentile Value: ")); Serial.println(read_EE(110));  
+  Serial.print(F("Debug Enable Value: ")); Serial.println(read_EE(120));  
+  Serial.print(F("Transmission Mode Value: ")); Serial.println(read_EE(130));  
+  Serial.print(F("Chip Based battery monitoring: ")); Serial.println(read_EE(135));   
+  Serial.print(F("PM sample entries: ")); Serial.println(read_EE(140));   
+}
+
+void writeString(char add,String data){
+  int _size = data.length();
+  int i;
+  for(i=0;i<_size;i++){
+    EEPROM.write(add+i,data[i]);
+  }
+  EEPROM.write(add+_size,'\0');   //Add termination null character for String Data
+  //EEPROM.commit();
+}
+
+String read_String(char add){
+  int i;
+  char data[100]; //Max 100 Bytes
+  int len=0;
+  unsigned char k;
+  k=EEPROM.read(add);
+  while(k != '\0' && len<500){    
+    k=EEPROM.read(add+len);  // Fixed: removed the extra +1
+    data[len]=k;
+    len++;
+  }
+  data[len]='\0';
+  return String(data);
+}
+
+String read_EE(char add){
+  int i;
+  char data[100]; //Max 100 Bytes
+  int len=0;
+  unsigned char k;
+  k=EEPROM.read(add);
+  while(k != '\0' && len<500)   //Read until null character
+  {    
+    k=EEPROM.read(add+len);
+    data[len]=k;
+    len++;
+  }
+  data[len]='\0';
+  return String(data);
+}
+
+void writeBuffer(char add, char* Buffer){
+  int _size = strlen(Buffer);
+  int i;
+  for(i=0;i<_size;i++){
+    EEPROM.write(add+i,Buffer[i]);
+  }
+}
+
 // #include <SD.h>
 // #include <sd_card.h>
 // #include <Arduino.h>
