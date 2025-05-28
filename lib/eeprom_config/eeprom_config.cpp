@@ -20,7 +20,6 @@ void saveConfigurationToEEPROM() {
   // Write the structure after the signature
   EEPROM.put(SIGNATURE_ADDRESS + sizeof(WRITTEN_SIGNATURE), eeprom_configuration_struct);
   Serial.println(F("Configuration saved to EEPROM."));
-  // EEPROM.commit(); // Only needed if you are on ESP32/ESP8266, not for Arduino Mega 2560
 }
 
 bool deviceSelfConfig(String configJson) {

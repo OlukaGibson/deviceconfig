@@ -12,8 +12,8 @@
 
 // Global variables
 String DevName;
-int channelId;
-char writeAPIKey[32];  // Buffer size for API key
+long channelId;
+char writeAPIKey[16];  // Buffer size for API key
 int DeploymentMode;
 int SDCS;
 int spvalue;
@@ -30,7 +30,8 @@ void printCurrentConfiguration();
 void writeString(char add, String data);
 String read_String(char add);
 String read_EE(char add);
-void writeBuffer(char add, char* Buffer);
+void jsonWriteBuffer(char add, char* Buffer);
+void getEEPROMData(String ccid);
 
 void setup(){
   Serial.begin(115200);
@@ -39,12 +40,17 @@ void setup(){
   Serial1.begin(115200);
   delay(1000);
 
-//   clearEEPROM();
-//   printCurrentConfiguration();
+  // Serial.println(F("Initializing GSM modem..."));
+  // powerGSM(1);
+  delay(2000);
+
+  
+  clearEEPROM();
+  // printCurrentConfiguration();
 
   delay(3000);
-//   configureExample1();
-    configureExample2();
+  configureExample1();
+    // configureExample2();
 }
 
 void loop() {}
@@ -78,21 +84,18 @@ void configureExample1() {
       "Sleep Percentile Value": "500",
       "Transmission Mode": "0"
     },
-    "deviceID": 1,
-    "name": "Airqo-G5377",
+    "deviceID": 2653387,
+    "name": " Airqo-G5377",
     "networkID": "8944501905220513027",
-    "readkey": "UNIMR7IQDZGRYRM6",
-    "writekey": "QPYX979B54OF8CBN"
+    "readkey": " NC2TG9T8745FIABA",
+    "writekey": " PJ526POTDD9SZIX9"
   })";
   
-  configureFromJSON(jsonConfig);
+  configureFromJSON(jsonConfig); //2653387
 }
 
 void configureFromJSON(String jsonData) {
   Serial.println(F("##################### JSON DEVICE CONFIGURATION #######################"));
-  
-  // Parse JSON data (assuming you have a JSON parsing library like ArduinoJson)
-  // If you don't have ArduinoJson, you'll need to add it to your project
   
   DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, jsonData);
@@ -118,15 +121,9 @@ void configureFromJSON(String jsonData) {
     }
   }
   
-  // Extract and set channel ID (from deviceID or networkID)
+  // Extract and set channel ID
   if (doc.containsKey("deviceID")) {
     channelId = doc["deviceID"];
-    writeString(31, String(channelId));
-    Serial.print(F("Channel ID set to: "));
-    Serial.println(channelId);
-  } else if (doc.containsKey("networkID")) {
-    String networkID = doc["networkID"];
-    channelId = networkID.toInt();
     writeString(31, String(channelId));
     Serial.print(F("Channel ID set to: "));
     Serial.println(channelId);
@@ -136,7 +133,7 @@ void configureFromJSON(String jsonData) {
   if (doc.containsKey("writekey")) {
     String writeKey = doc["writekey"];
     strcpy(writeAPIKey, writeKey.c_str());
-    writeBuffer(61, writeAPIKey);
+    jsonWriteBuffer(61, writeAPIKey);
     Serial.print(F("Write API Key set to: "));
     Serial.println(writeKey);
   }
@@ -240,7 +237,7 @@ String read_String(char add){
   unsigned char k;
   k=EEPROM.read(add);
   while(k != '\0' && len<500){    
-    k=EEPROM.read(add+len);  // Fixed: removed the extra +1
+    k=EEPROM.read(add+1+len);
     data[len]=k;
     len++;
   }
@@ -264,6 +261,15 @@ String read_EE(char add){
   return String(data);
 }
 
+void jsonWriteBuffer(char add, char* Buffer){
+  int _size = strlen(Buffer);
+  int i;
+  for(i=0;i<_size;i++){
+    EEPROM.write(add+i,Buffer[i]);
+  }
+  EEPROM.write(add+_size,'\0');  // Add null terminator
+}
+
 void writeBuffer(char add, char* Buffer){
   int _size = strlen(Buffer);
   int i;
@@ -271,6 +277,88 @@ void writeBuffer(char add, char* Buffer){
     EEPROM.write(add+i,Buffer[i]);
   }
 }
+
+// void postData(String url) {
+//     Serial.print(F("Requesting URL: "));
+//     Serial.println(url);
+
+//     http.get(url);
+
+//     int statusCode = http.responseStatusCode();
+//     responseData = http.responseBody();
+
+//     Serial.print(F("Response Code: "));
+//     Serial.println(statusCode);
+//     Serial.print(F("Response Body: "));
+//     Serial.println(responseData);
+
+//     if (statusCode == 200) {
+//         Serial.println(F("Data sent successfully!"));
+//         // return response;
+//         // updateEEPROMFromResponse(response); // Update EEPROM with response data
+//     } else {
+//         Serial.println(F("Failed to send data."));
+//         // return "null";
+//     }
+
+//     // modem.gprsDisconnect();
+//     // Serial.println("Disconnected from GPRS.");
+// }
+
+// void getEEPROMData(String ccid) {
+//   String url =  "/device/"+ccid+"/selfconfig"; //"/";
+//   postData(url);
+//   // return postData(url);
+// }
+
+// String getGSMData(){
+//   delay(2000);
+//   String response = "";
+//   while (Serial1.available()) {
+//     char c = Serial1.read();
+//     if (isDigit(c)) { // Only keep numeric characters
+//       response += c;
+//     }
+//   }
+
+//   if (response.length() > 0) {
+//     response.trim();
+//   } else {
+//     Serial.println(F("Failed to get IMSI."));
+//   }
+//   return response;
+// }
+
+// String getIMSI() {
+//   Serial1.println("AT+CIMI");
+//   String response = getGSMData();
+//   return response;
+// }
+
+// String getCCID() {
+//   Serial1.println("AT+CCID");
+//   String response = getGSMData();
+//   return response;
+// }
+
+// String getIMEI() {
+//   Serial1.println("AT+GSN");
+//   String response = getGSMData();
+//   return response;
+// }
+
+// String getSignalQuality() {
+//   Serial1.println("AT+CSQ");
+//   String response = getGSMData();
+//   return response;
+// }
+
+// void powerGSM(int state) {
+//   pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
+//   digitalWrite(GSM_POWER_SWITCH_PIN, state ? HIGH : LOW);
+//   // Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
+//   delay(2000);
+// }
 
 // #include <SD.h>
 // #include <sd_card.h>
