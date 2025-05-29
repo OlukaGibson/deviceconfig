@@ -31,6 +31,7 @@ void writeString(char add, String data);
 String read_String(char add);
 String read_EE(char add);
 void jsonWriteBuffer(char add, char* Buffer);
+void writeBuffer(char add, char* Buffer);
 void getEEPROMData(String ccid);
 
 void setup(){
@@ -111,14 +112,10 @@ void configureFromJSON(String jsonData) {
   // Extract and set device name
   if (doc.containsKey("name")) {
     String deviceName = doc["name"];
-    if (deviceName.length() <= 22) {
-      DevName = deviceName;
-      writeString(1, DevName);
-      Serial.print(F("Device Name set to: "));
-      Serial.println(DevName);
-    } else {
-      Serial.println(F("Warning: Device name too long, skipping"));
-    }
+    DevName = deviceName;
+    writeString(1, DevName);
+    Serial.print(F("Device Name set to: "));
+    Serial.println(DevName);
   }
   
   // Extract and set channel ID
