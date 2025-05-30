@@ -1,360 +1,296 @@
-#include <SD.h>
-#include <sd_card.h>
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include <eeprom_config.h>
-#include <SoftwareSerial.h>
-#include <TinyGsmClient.h>
-#include <pin_definition.h>
-#include <globalVariables.h>
-#include <ArduinoHttpClient.h>
-#include <gsm_communication.h>
+// #include <SD.h>
+// #include <sd_card.h>
+// #include <Arduino.h>
+// #include <ArduinoJson.h>
+// #include <eeprom_config.h>
+// #include <SoftwareSerial.h>
+// #include <TinyGsmClient.h>
+// #include <pin_definition.h>
+// #include <globalVariables.h>
+// #include <ArduinoHttpClient.h>
+// #include <gsm_communication.h>
 
-// Global variables
-String DevName;
-long channelId;
-char writeAPIKey[16];  // Buffer size for API key
-int DeploymentMode;
-int SDCS;
-int spvalue;
-int DebugEnable;
-int TransMode;
-int chipBasedBatteryOps;
-int pmSamples;
+// // Global variables
+// String DevName;
+// long channelId;
+// char writeAPIKey[16];
+// int DeploymentMode;
+// int SDCS;
+// int spvalue;
+// int DebugEnable;
+// int TransMode;
+// int chipBasedBatteryOps;
+// int pmSamples;
 
-// Function prototypes
-void configureExample1();
-void configureExample2();
-void configureFromJSON(String jsonData);
-void printCurrentConfiguration();
-void writeString(char add, String data);
-String read_String(char add);
-String read_EE(char add);
-void jsonWriteBuffer(char add, char* Buffer);
-void writeBuffer(char add, char* Buffer);
-void getEEPROMData(String ccid);
+// // Function prototypes
+// void configureExample1();
+// void configureExample2();
+// void configureFromJSON(String jsonData);
+// void printCurrentConfiguration();
+// void writeString(char add, String data);
+// String read_String(char add);
+// String read_EE(char add);
+// void jsonWriteBuffer(char add, char* Buffer);
+// void writeBuffer(char add, char* Buffer);
+// void getEEPROMData(String ccid);
+// void jsonWriteString(char add, String data);
 
-void setup(){
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println(F("__________________________STARTING device__________________________"));
-  Serial1.begin(115200);
-  delay(1000);
+// void setup(){
+//   Serial.begin(115200);
+//   delay(1000);
+//   Serial.println(F("__________________________STARTING device__________________________"));
+//   Serial1.begin(115200);
+//   delay(1000);
 
-  // Serial.println(F("Initializing GSM modem..."));
-  // powerGSM(1);
-  delay(2000);
-
-  
-  clearEEPROM();
-  // printCurrentConfiguration();
-
-  delay(3000);
-  configureExample1();
-    // configureExample2();
-}
-
-void loop() {}
-
-void configureExample2() {
-  String jsonConfig = R"({
-    "configs": {
-      "Chip Based battery monitoring": "0",
-      "Debug Enable": "1",
-      "Deployment Mode": "0",
-      "PM sample entries": "5",
-      "SD card pin": "28",
-      "Sleep Percentile Value": "100",
-      "Transmission Mode": "0"
-    },
-    "deviceID": 1,
-    "fileDownloadState": false
-  })";
-  
-  configureFromJSON(jsonConfig);
-}
-
-void configureExample1() {
-  String jsonConfig = R"({
-    "configs": {
-      "Chip Based battery monitoring": "0",
-      "Debug Enable": "1",
-      "Deployment Mode": "0",
-      "PM sample entries": "60",
-      "SD card pin": "28",
-      "Sleep Percentile Value": "500",
-      "Transmission Mode": "0"
-    },
-    "deviceID": 2653387,
-    "name": " Airqo-G5377",
-    "networkID": "8944501905220513027",
-    "readkey": " NC2TG9T8745FIABA",
-    "writekey": " PJ526POTDD9SZIX9"
-  })";
-  
-  configureFromJSON(jsonConfig); //2653387
-}
-
-void configureFromJSON(String jsonData) {
-  Serial.println(F("##################### JSON DEVICE CONFIGURATION #######################"));
-  
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, jsonData);
-  
-  if (error) {
-    Serial.print(F("JSON parsing failed: "));
-    Serial.println(error.c_str());
-    return;
-  }
-  
-  Serial.println(F("Configuring device from JSON data..."));
-  
-  // Extract and set device name
-  if (doc.containsKey("name")) {
-    String deviceName = doc["name"];
-    DevName = deviceName;
-    writeString(1, DevName);
-    Serial.print(F("Device Name set to: "));
-    Serial.println(DevName);
-  }
-  
-  // Extract and set channel ID
-  if (doc.containsKey("deviceID")) {
-    channelId = doc["deviceID"];
-    writeString(31, String(channelId));
-    Serial.print(F("Channel ID set to: "));
-    Serial.println(channelId);
-  }
-  
-  // Extract and set write API key
-  if (doc.containsKey("writekey")) {
-    String writeKey = doc["writekey"];
-    strcpy(writeAPIKey, writeKey.c_str());
-    jsonWriteBuffer(61, writeAPIKey);
-    Serial.print(F("Write API Key set to: "));
-    Serial.println(writeKey);
-  }
-  
-  // Extract and set configurations
-  if (doc.containsKey("configs")) {
-    JsonObject configs = doc["configs"];
-    
-    // Deployment Mode
-    if (configs.containsKey("Deployment Mode")) {
-      DeploymentMode = configs["Deployment Mode"].as<String>().toInt();
-      writeString(100, String(DeploymentMode));
-      Serial.print(F("Deployment Mode set to: "));
-      Serial.println(DeploymentMode);
-    }
-    
-    // SD Card CS Pin
-    if (configs.containsKey("SD card pin")) {
-      SDCS = configs["SD card pin"].as<String>().toInt();
-      writeString(103, String(SDCS));
-      Serial.print(F("SD Card CS Pin set to: "));
-      Serial.println(SDCS);
-    }
-    
-    // Sleep Percentile Value
-    if (configs.containsKey("Sleep Percentile Value")) {
-      spvalue = configs["Sleep Percentile Value"].as<String>().toInt();
-      writeString(110, String(spvalue));
-      Serial.print(F("Sleep Percentile Value set to: "));
-      Serial.println(spvalue);
-    }
-    
-    // Debug Enable
-    if (configs.containsKey("Debug Enable")) {
-      DebugEnable = configs["Debug Enable"].as<String>().toInt();
-      writeString(120, String(DebugEnable));
-      Serial.print(F("Debug Enable set to: "));
-      Serial.println(DebugEnable);
-    }
-    
-    // Transmission Mode
-    if (configs.containsKey("Transmission Mode")) {
-      TransMode = configs["Transmission Mode"].as<String>().toInt();
-      writeString(130, String(TransMode));
-      Serial.print(F("Transmission Mode set to: "));
-      Serial.println(TransMode);
-    }
-    
-    // Chip Based Battery Monitoring
-    if (configs.containsKey("Chip Based battery monitoring")) {
-      chipBasedBatteryOps = configs["Chip Based battery monitoring"].as<String>().toInt();
-      writeString(135, String(chipBasedBatteryOps));
-      Serial.print(F("Chip Based Battery Monitoring set to: "));
-      Serial.println(chipBasedBatteryOps);
-    }
-    
-    // PM Sample Entries
-    if (configs.containsKey("PM sample entries")) {
-      pmSamples = configs["PM sample entries"].as<String>().toInt();
-      writeString(140, String(pmSamples));
-      Serial.print(F("PM Sample Entries set to: "));
-      Serial.println(pmSamples);
-    }
-  }
-  
-  // Set device config mode
-  writeString(145, String(2));
-  
-  Serial.println(F("JSON Configuration Complete!"));
-  printCurrentConfiguration();
-}
-
-void printCurrentConfiguration() {
-  Serial.println(F("Current Configuration:"));
-  Serial.print(F("Device Name: ")); Serial.println(read_String(1));  
-  Serial.print(F("Channel ID: ")); Serial.println(read_EE(31));   
-  Serial.print(F("Write Key: ")); Serial.println(read_String(61)); 
-  Serial.print(F("SDCS PIN no.: ")); Serial.println(read_EE(103)); 
-  Serial.print(F("Deployment Mode: ")); Serial.println(read_EE(100)); 
-  Serial.print(F("Sleep Percentile Value: ")); Serial.println(read_EE(110));  
-  Serial.print(F("Debug Enable Value: ")); Serial.println(read_EE(120));  
-  Serial.print(F("Transmission Mode Value: ")); Serial.println(read_EE(130));  
-  Serial.print(F("Chip Based battery monitoring: ")); Serial.println(read_EE(135));   
-  Serial.print(F("PM sample entries: ")); Serial.println(read_EE(140));   
-}
-
-void writeString(char add,String data){
-  int _size = data.length();
-  int i;
-  for(i=0;i<_size;i++){
-    EEPROM.write(add+i,data[i]);
-  }
-  EEPROM.write(add+_size,'\0');   //Add termination null character for String Data
-  //EEPROM.commit();
-}
-
-String read_String(char add){
-  int i;
-  char data[100]; //Max 100 Bytes
-  int len=0;
-  unsigned char k;
-  k=EEPROM.read(add);
-  while(k != '\0' && len<500){    
-    k=EEPROM.read(add+1+len);
-    data[len]=k;
-    len++;
-  }
-  data[len]='\0';
-  return String(data);
-}
-
-String read_EE(char add){
-  int i;
-  char data[100]; //Max 100 Bytes
-  int len=0;
-  unsigned char k;
-  k=EEPROM.read(add);
-  while(k != '\0' && len<500)   //Read until null character
-  {    
-    k=EEPROM.read(add+len);
-    data[len]=k;
-    len++;
-  }
-  data[len]='\0';
-  return String(data);
-}
-
-void jsonWriteBuffer(char add, char* Buffer){
-  int _size = strlen(Buffer);
-  int i;
-  for(i=0;i<_size;i++){
-    EEPROM.write(add+i,Buffer[i]);
-  }
-  EEPROM.write(add+_size,'\0');  // Add null terminator
-}
-
-void writeBuffer(char add, char* Buffer){
-  int _size = strlen(Buffer);
-  int i;
-  for(i=0;i<_size;i++){
-    EEPROM.write(add+i,Buffer[i]);
-  }
-}
-
-// void postData(String url) {
-//     Serial.print(F("Requesting URL: "));
-//     Serial.println(url);
-
-//     http.get(url);
-
-//     int statusCode = http.responseStatusCode();
-//     responseData = http.responseBody();
-
-//     Serial.print(F("Response Code: "));
-//     Serial.println(statusCode);
-//     Serial.print(F("Response Body: "));
-//     Serial.println(responseData);
-
-//     if (statusCode == 200) {
-//         Serial.println(F("Data sent successfully!"));
-//         // return response;
-//         // updateEEPROMFromResponse(response); // Update EEPROM with response data
-//     } else {
-//         Serial.println(F("Failed to send data."));
-//         // return "null";
-//     }
-
-//     // modem.gprsDisconnect();
-//     // Serial.println("Disconnected from GPRS.");
-// }
-
-// void getEEPROMData(String ccid) {
-//   String url =  "/device/"+ccid+"/selfconfig"; //"/";
-//   postData(url);
-//   // return postData(url);
-// }
-
-// String getGSMData(){
+//   // Serial.println(F("Initializing GSM modem..."));
+//   // powerGSM(1);
 //   delay(2000);
-//   String response = "";
-//   while (Serial1.available()) {
-//     char c = Serial1.read();
-//     if (isDigit(c)) { // Only keep numeric characters
-//       response += c;
+
+//   // printCurrentConfiguration();
+
+//   delay(3000);
+//   configureExample1();
+//     // configureExample2();
+
+//   Serial.print(F("DevName length BT: ")); Serial.println(read_String(1).length());
+//   String trimDevName = read_String(1);
+//   trimDevName.trim();
+//   Serial.print(F("DevName length AT: ")); Serial.println(trimDevName.length());
+
+//   Serial.print(F("Write Key length BT: ")); Serial.println(read_String(61).length());
+//   String trimWriteKey = read_String(61);
+//   trimWriteKey.trim();
+//   Serial.print(F("DevName length AT: ")); Serial.println(trimWriteKey.length());
+
+// }
+
+// void loop() {}
+
+// void configureExample2() {
+//   String jsonConfig = R"({
+//     "configs": {
+//       "Chip Based battery monitoring": "0",
+//       "Debug Enable": "1",
+//       "Deployment Mode": "0",
+//       "PM sample entries": "5",
+//       "SD card pin": "28",
+//       "Sleep Percentile Value": "100",
+//       "Transmission Mode": "0"
+//     },
+//     "deviceID": 1,
+//     "fileDownloadState": false
+//   })";
+  
+//   configureFromJSON(jsonConfig);
+// }
+
+// void configureExample1() {
+//   String jsonConfig = R"({
+//     "configs": {
+//       "Chip Based battery monitoring": "0",
+//       "Debug Enable": "1",
+//       "Deployment Mode": "0",
+//       "PM sample entries": "60",
+//       "SD card pin": "28",
+//       "Sleep Percentile Value": "500",
+//       "Transmission Mode": "0"
+//     },
+//     "deviceID": 2653387,
+//     "name": "Airqo-G5377",
+//     "networkID": "8944501905220513027",
+//     "readkey": "NC2TG9T8745FIABA",
+//     "writekey": "PJ526POTDD9SZIX9"
+//   })";
+  
+//   configureFromJSON(jsonConfig);
+// }
+// // 08:01:56.189 -> Airqo-G5377
+// // 08:01:56.189 -> Firmware Version:42.74
+// // 08:01:56.189 -> Static Deployment
+// // 08:01:56.189 -> SD CS: 28
+// // 08:01:56.189 -> SPV value: 0
+// // 08:01:56.189 -> Debug Mode: 1
+// // 08:01:56.189 -> Transmission Mode: 0
+// // 08:01:56.189 -> Chip based Battery monitoring Mode: 0
+// // 08:01:56.189 -> PM Sample entries: 1
+
+
+// void configureFromJSON(String jsonData) {
+//   Serial.println(F("##################### JSON DEVICE CONFIGURATION #######################"));
+  
+//   DynamicJsonDocument doc(1024);
+//   DeserializationError error = deserializeJson(doc, jsonData);
+  
+//   if (error) {
+//     Serial.print(F("JSON parsing failed: "));
+//     Serial.println(error.c_str());
+//     return;
+//   }
+  
+//   Serial.println(F("Configuring device from JSON data..."));
+  
+//   // Clear EEPROM first
+//   clearEEPROM();
+  
+//   // Extract and set device name using fixed write function
+//   if (doc.containsKey("name")) {
+//     String deviceName = doc["name"];
+//     // deviceName.trim();
+//     DevName = deviceName;
+//     jsonWriteString(1, DevName);  // Use the fixed function
+//     Serial.print(F("Device Name set to: "));
+//     Serial.println(DevName);
+//   }
+  
+//   // Extract and set channel ID
+//   if (doc.containsKey("deviceID")) {
+//     channelId = doc["deviceID"];
+//     writeString(31, String(channelId));  // Numbers should work fine
+//     Serial.print(F("Channel ID set to: "));
+//     Serial.println(channelId);
+//   }
+  
+//   // Extract and set write API key using fixed function
+//   if (doc.containsKey("writekey")) {
+//     String writeKey = doc["writekey"];
+//     // writeKey.trim();
+//     jsonWriteString(61, writeKey);  // Use the fixed function
+//     Serial.print(F("Write API Key set to: "));
+//     Serial.println(writeKey);
+//   }
+  
+//   // Rest of the configurations (these are mostly numbers so should work)
+//   if (doc.containsKey("configs")) {
+//     JsonObject configs = doc["configs"];
+    
+//     if (configs.containsKey("Deployment Mode")) {
+//       DeploymentMode = configs["Deployment Mode"].as<String>().toInt();
+//       writeString(100, String(DeploymentMode));
+//     }
+    
+//     if (configs.containsKey("SD card pin")) {
+//       SDCS = configs["SD card pin"].as<String>().toInt();
+//       writeString(103, String(SDCS));
+//     }
+    
+//     if (configs.containsKey("Sleep Percentile Value")) {
+//       spvalue = configs["Sleep Percentile Value"].as<String>().toInt();
+//       writeString(110, String(spvalue));
+//     }
+    
+//     if (configs.containsKey("Debug Enable")) {
+//       DebugEnable = configs["Debug Enable"].as<String>().toInt();
+//       writeString(120, String(DebugEnable));
+//     }
+    
+//     if (configs.containsKey("Transmission Mode")) {
+//       TransMode = configs["Transmission Mode"].as<String>().toInt();
+//       writeString(130, String(TransMode));
+//     }
+    
+//     if (configs.containsKey("Chip Based battery monitoring")) {
+//       chipBasedBatteryOps = configs["Chip Based battery monitoring"].as<String>().toInt();
+//       writeString(135, String(chipBasedBatteryOps));
+//     }
+    
+//     if (configs.containsKey("PM sample entries")) {
+//       pmSamples = configs["PM sample entries"].as<String>().toInt();
+//       writeString(140, String(pmSamples));
 //     }
 //   }
+  
+//   // Set device config mode
+//   writeString(145, String(2));
+  
+//   Serial.println(F("JSON Configuration Complete!"));
+//   printCurrentConfiguration();
+// }
 
-//   if (response.length() > 0) {
-//     response.trim();
-//   } else {
-//     Serial.println(F("Failed to get IMSI."));
+// void printCurrentConfiguration() {
+//   Serial.println(F("Current Configuration:"));
+//   Serial.print(F("Device Name: ")); Serial.println(read_String(1));
+//   Serial.print(F("Channel ID: ")); Serial.println(read_EE(31));   
+//   Serial.print(F("Write Key: ")); Serial.println(read_String(61)); 
+//   Serial.print(F("SDCS PIN no.: ")); Serial.println(read_EE(103)); 
+//   Serial.print(F("Deployment Mode: ")); Serial.println(read_EE(100)); 
+//   Serial.print(F("Sleep Percentile Value: ")); Serial.println(read_EE(110));  
+//   Serial.print(F("Debug Enable Value: ")); Serial.println(read_EE(120));  
+//   Serial.print(F("Transmission Mode Value: ")); Serial.println(read_EE(130));  
+//   Serial.print(F("Chip Based battery monitoring: ")); Serial.println(read_EE(135));   
+//   Serial.print(F("PM sample entries: ")); Serial.println(read_EE(140));   
+// }
+
+// void writeString(char add,String data){
+//   int _size = data.length();
+//   int i;
+//   for(i=0;i<_size;i++){
+//     EEPROM.write(add+i,data[i]);
 //   }
-//   return response;
+//   EEPROM.write(add+_size,'\0');   //Add termination null character for String Data
+//   //EEPROM.commit();
 // }
 
-// String getIMSI() {
-//   Serial1.println("AT+CIMI");
-//   String response = getGSMData();
-//   return response;
+// void jsonWriteString(char add, String data) {
+//   int _size = data.length();
+  
+//   EEPROM.write(add, data[0]);
+  
+//   // Write the rest of the string starting from add+1
+//   for(int i = 0; i < _size; i++){
+//     EEPROM.write(add + 1 + i, data[i]);
+//   }
+  
+//   // Add carriage return before null terminator
+//   EEPROM.write(add + 1 + _size, '\r');
+//   EEPROM.write(add + 1 + _size + 1, '\0'); 
 // }
 
-// String getCCID() {
-//   Serial1.println("AT+CCID");
-//   String response = getGSMData();
-//   return response;
+// String read_String(char add){
+//   int i;
+//   char data[100]; //Max 100 Bytes
+//   int len=0;
+//   unsigned char k;
+//   k=EEPROM.read(add);
+//   while(k != '\0' && len<500){    
+//     k=EEPROM.read(add+1+len);
+//     data[len]=k;
+//     len++;
+//   }
+//   data[len]='\0';
+//   return String(data);
 // }
 
-// String getIMEI() {
-//   Serial1.println("AT+GSN");
-//   String response = getGSMData();
-//   return response;
+// String read_EE(char add){
+//   int i;
+//   char data[100]; //Max 100 Bytes
+//   int len=0;
+//   unsigned char k;
+//   k=EEPROM.read(add);
+//   while(k != '\0' && len<500)   //Read until null character
+//   {    
+//     k=EEPROM.read(add+len);
+//     data[len]=k;
+//     len++;
+//   }
+//   data[len]='\0';
+//   return String(data);
 // }
 
-// String getSignalQuality() {
-//   Serial1.println("AT+CSQ");
-//   String response = getGSMData();
-//   return response;
+// void jsonWriteBuffer(char add, char* Buffer){
+//   int _size = strlen(Buffer);
+//   int i;
+//   for(i=0;i<_size;i++){
+//     EEPROM.write(add+i,Buffer[i]);
+//   }
+//   EEPROM.write(add+_size,'\0');  // Add null terminator
 // }
 
-// void powerGSM(int state) {
-//   pinMode(GSM_POWER_SWITCH_PIN, OUTPUT);
-//   digitalWrite(GSM_POWER_SWITCH_PIN, state ? HIGH : LOW);
-//   // Serial.println("GSM power state: " + String(state ? "ON" : "OFF"));
-//   delay(2000);
+// void writeBuffer(char add, char* Buffer){
+//   int _size = strlen(Buffer);
+//   int i;
+//   for(i=0;i<_size;i++){
+//     EEPROM.write(add+i,Buffer[i]);
+//   }
 // }
 
 // #include <SD.h>

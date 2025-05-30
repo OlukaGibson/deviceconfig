@@ -531,13 +531,13 @@ int8_t resumeFirmwareDownload(String resource) {
 }
 
 // First, add these missing functions
-void firmwareDelete() {
-  // Delete firmware file if it exists
-  if (SD.exists(FIRMWARE_NAME)) {
-    Serial.println(F("Deleting existing firmware file..."));
-    SD.remove(FIRMWARE_NAME);
-  }
-}
+// void firmwareDelete() {
+//   // Delete firmware file if it exists
+//   if (SD.exists(FIRMWARE_NAME)) {
+//     Serial.println(F("Deleting existing firmware file..."));
+//     SD.remove(FIRMWARE_NAME);
+//   }
+// }
 
 bool verifyFirmware(const char* firmwareFile, String expectedCRC) {
   File file = SD.open(firmwareFile);
