@@ -152,13 +152,13 @@ void configureFromJSON(String jsonData) {
       writeString(100, String(DeploymentMode));
     }
     
-    if (configs.containsKey("SD card pin")) {
-      SDCS = configs["SD card pin"].as<String>().toInt();
+    if (configs.containsKey("Sd card pin")) {
+      SDCS = configs["Sd card pin"].as<String>().toInt();
       writeString(103, String(SDCS));
     }
     
-    if (configs.containsKey("Sleep Percentile Value")) {
-      spvalue = configs["Sleep Percentile Value"].as<String>().toInt();
+    if (configs.containsKey("SPV")) {
+      spvalue = configs["SPV"].as<String>().toInt();
       writeString(110, String(spvalue));
     }
     
